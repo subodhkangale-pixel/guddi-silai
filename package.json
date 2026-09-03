@@ -1,0 +1,25 @@
+{
+  "name": "guddi-silai",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Guddi Silai - Indian blouse e-commerce and custom-tailoring platform",
+  "scripts": {
+    "dev": "pnpm --filter web dev",
+    "build": "pnpm --filter web build && pnpm --filter api build",
+    "lint": "pnpm --filter web lint && pnpm --filter api lint && pnpm --filter shared lint",
+    "typecheck": "pnpm --filter web typecheck && pnpm --filter api typecheck && pnpm --filter shared typecheck",
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md,yml,yaml}\"",
+    "db:generate": "pnpm --filter api db:generate",
+    "db:push": "pnpm --filter api db:push",
+    "db:studio": "pnpm --filter api db:studio"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.1",
+    "prettier": "^3.3.3",
+    "turbo": "^2.0.0"
+  },
+  "engines": {
+    "node": ">=20.18.0"
+  },
+  "packageManager": "pnpm@10.34.5"
+}
