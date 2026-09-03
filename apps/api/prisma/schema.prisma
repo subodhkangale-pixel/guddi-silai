@@ -1,0 +1,697 @@
+// ─── Guddi Silai — Prisma Schema (MongoDB) ───
+// Phase 1: Domain / Database Foundation
+// Source: docs/database-design.md + ADRs 008–016
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+// ──────────────────────────────────────────────
+// Enums
+// ──────────────────────────────────────────────
+
+enum ProductType {
+  READY_MADE
+  CUSTOMIZE
+  SHOWCASE
+}
+
+enum OrderStatus {
+  PLACED
+  CONFIRMED
+  PROCESSING
+  STITCHING
+  QUALITY_CHECK
+  PACKED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  RETURNED
+  FAILED
+}
+
+enum CouponType {
+  PERCENT
+  FIXED
+}
+
+enum PaymentMethod {
+  RAZORPAY
+  COD
+  UPI
+  NET_BANKING
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum AnalyticsEventType {
+  PAGE_VIEW
+  PRODUCT_VIEW
+  PRODUCT_VIEW_START
+  PRODUCT_VIEW_END
+  PRODUCT_IMAGE_VIEW
+  IMAGE_ZOOM
+  SEARCH
+  CATEGORY_VIEW
+  WISHLIST_ADD
+  CART_ADD
+  CART_REMOVE
+  BUY_NOW
+  CHECKOUT_START
+  MEASUREMENT_START
+  MEASUREMENT_COMPLETE
+  WHATSAPP_CLICK
+  SHARE
+  ORDER_PLACED
+  PAYMENT_SUCCESS
+  PAYMENT_FAILED
+}
+
+enum MeasurementUnit {
+  INCHES
+  CM
+}
+
+// ──────────────────────────────────────────────
+// Embedded Types (immutable snapshots / owned children)
+// ──────────────────────────────────────────────
+
+type ProductSEO {
+  title       String?
+  description String?
+  keywords    String[]
+  ogImage     String?
+}
+
+type ProductVariantOption {
+  colorId String @db.ObjectId
+  sizeId  String @db.ObjectId
+}
+
+type FiberOption {
+  id       String   @db.ObjectId
+  name     String
+  price    Float?
+  image    String?
+  isActive Boolean? @default(true)
+}
+
+type EmbroideryOption {
+  id        String   @db.ObjectId
+  name      String
+  surcharge Float?
+  image     String?
+  isActive  Boolean? @default(true)
+}
+
+type MeasurementValue {
+  fieldId  String  @db.ObjectId
+  fieldKey String
+  label    String
+  value    Float
+  unit     String
+}
+
+type MeasurementSnapshot {
+  values                       MeasurementValue[]
+  measurementInstructionVersion Int
+  sourceProfileId              String? @db.ObjectId
+}
+
+type CartItem {
+  productType         ProductType
+  productId           String     @db.ObjectId
+  productName         String
+  productDesignId     String?
+  productImage        String?
+  variantId           String?    @db.ObjectId
+  color               String?
+  colorId             String?    @db.ObjectId
+  size                String?
+  sizeId              String?    @db.ObjectId
+  fiberId             String?    @db.ObjectId
+  fiberName           String?
+  fiberPrice          Float?   
+  embroideryId        String?    @db.ObjectId
+  embroideryName      String?
+  embroiderySurcharge Float?
+  unitPrice           Float
+  discount            Float?
+  quantity            Int        @default(1)
+  measurementStatus   String?
+  measurementValues   Json?
+}
+
+type WishlistItem {
+  productId       String   @db.ObjectId
+  productName     String
+  productDesignId String?
+  productImage    String?
+  productType     ProductType
+  basePrice       Float
+  isActive        Boolean  @default(true)
+}
+
+type CustomerSnapshot {
+  name    String
+  mobile  String
+  email   String?
+  address String
+  city    String
+  state   String
+  pincode String
+}
+
+type PaymentSnapshot {
+  method        PaymentMethod
+  status        PaymentStatus
+  transactionId String?
+  amount        Float
+  paidAt        DateTime?
+}
+
+type CouponSnapshot {
+  code     String
+  type     CouponType
+  discount Float
+}
+
+type OfferSnapshot {
+  name     String
+  type     String
+  discount Float
+}
+
+type OrderItemSnapshot {
+  productName         String
+  productDesignId     String?
+  variantId           String?            @db.ObjectId
+  sku                 String?
+  productType         ProductType
+  color               String?
+  size                String?
+  fiber               String?
+  embroidery          String?
+  quantity            Int
+  unitPrice           Float
+  discount            Float?
+  measurementSnapshot MeasurementSnapshot?
+  customizationNotes  String?
+  total               Float            
+}
+
+type AnalyticsDeviceInfo {
+  device  String?
+  browser String?
+  os      String?
+  screen  String?
+}
+
+type AnalyticsTrafficSource {
+  source   String?
+  medium   String?
+  campaign String?
+  referrer String?
+}
+
+type AnalyticsLocation {
+  country String?
+  state   String?
+  city    String?
+  ip      String?
+}
+
+// ──────────────────────────────────────────────
+// Catalogue / Reference Models (referenced by _id)
+// ──────────────────────────────────────────────
+
+model Category {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  name         String
+  slug         String   @unique
+  description  String?
+  image        String?
+  displayOrder Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("categories")
+}
+
+model SubCategory {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  name         String
+  slug         String   @unique
+  description  String?
+  image        String?
+  categoryId   String   @db.ObjectId
+  displayOrder Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([categoryId])
+  @@map("subcategories")
+}
+
+model Color {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  name         String
+  hex          String?
+  image        String?
+  displayOrder Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("colors")
+}
+
+model Size {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  name         String
+  code         String?
+  displayOrder Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("sizes")
+}
+
+model Fiber {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String   @unique
+  description String?
+  price       Float
+  image       String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("fibers")
+}
+
+model Embroidery {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  name       String
+  description String?
+  surcharge  Float?
+  image      String?
+  productId  String?  @db.ObjectId
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([productId])
+  @@map("embroideries")
+}
+
+// ──────────────────────────────────────────────
+// Product Architecture
+// ──────────────────────────────────────────────
+
+model Product {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  designId    String?  @unique
+  slug        String   @unique
+  description String?
+  type        ProductType
+
+  categoryId    String  @db.ObjectId
+  subCategoryId String?
+
+  basePrice       Float
+  compareAtPrice  Float?
+  discountPercent Float?
+
+  colors            ProductVariantOption[]
+  sizes             ProductVariantOption[]
+  fiberOptions      FiberOption[]
+  embroideryOptions EmbroideryOption[]
+
+  images String[]
+  videos String[]
+
+  tags String[]
+  seo  ProductSEO?
+
+  isActive             Boolean   @default(true)
+  expectedAvailability DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  @@index([type])
+  @@index([categoryId])
+  @@index([subCategoryId])
+  @@index([isActive])
+  @@map("products")
+}
+
+model ProductVariant {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  productId String   @db.ObjectId
+  sku       String?  @unique
+  colorId   String   @db.ObjectId
+  sizeId    String   @db.ObjectId
+  price     Float
+  discount  Float?
+  stock     Int      @default(0)
+  isActive  Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([productId])
+  @@index([colorId, sizeId])
+  @@map("product_variants")
+}
+
+// ──────────────────────────────────────────────
+// Inventory
+// ──────────────────────────────────────────────
+
+model StockMovement {
+  id               String   @id @default(auto()) @map("_id") @db.ObjectId
+  variantId        String?  @db.ObjectId
+  fiberInventoryId String?  @db.ObjectId
+  type             String
+  quantity         Int
+  reason           String?
+  referenceId      String?
+  createdAt        DateTime @default(now())
+
+  @@index([variantId])
+  @@index([fiberInventoryId])
+  @@index([createdAt])
+  @@map("stock_movements")
+}
+
+model FiberInventory {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  fiberId  String   @db.ObjectId
+  colorId  String   @db.ObjectId
+  stock    Int      @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([fiberId, colorId])
+  @@map("fiber_inventory")
+}
+
+// ──────────────────────────────────────────────
+// User
+// ──────────────────────────────────────────────
+
+model User {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  email     String?  @unique
+  googleId  String?  @unique
+  mobile    String?
+  avatar    String?
+  isGuest   Boolean  @default(false)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+// ──────────────────────────────────────────────
+// Measurements
+// ──────────────────────────────────────────────
+
+model MeasurementField {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  key           String   @unique
+  label         String
+  unit          MeasurementUnit
+  instructions  String?
+  exampleImage  String?
+  gifOrVideoUrl String?
+  isRequired    Boolean  @default(true)
+  displayOrder  Int      @default(0)
+  isActive      Boolean  @default(true)
+  version       Int      @default(1)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([isActive])
+  @@index([displayOrder])
+  @@map("measurement_fields")
+}
+
+model MeasurementProfile {
+  id        String             @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String             @db.ObjectId
+  alias     String?
+  values    MeasurementValue[]
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  @@index([userId])
+  @@map("measurement_profiles")
+}
+
+// ──────────────────────────────────────────────
+// Cart
+// ──────────────────────────────────────────────
+
+model Cart {
+  id         String     @id @default(auto()) @map("_id") @db.ObjectId
+  ownerKey   String     @unique
+  userId     String?    @db.ObjectId
+  items      CartItem[]
+  totalItems Int        @default(0)
+  totalPrice Float     @default(0)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  @@index([userId])
+  @@map("carts")
+}
+
+// ──────────────────────────────────────────────
+// Wishlist
+// ──────────────────────────────────────────────
+
+model Wishlist {
+  id        String         @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String         @unique @db.ObjectId
+  items     WishlistItem[]
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@map("wishlists")
+}
+
+// ──────────────────────────────────────────────
+// Orders
+// ──────────────────────────────────────────────
+
+model Order {
+  id          String              @id @default(auto()) @map("_id") @db.ObjectId
+  orderNumber String              @unique
+  userId      String?             @db.ObjectId
+  status      OrderStatus         @default(PLACED)
+
+  customer CustomerSnapshot
+  items    OrderItemSnapshot[]
+  payment  PaymentSnapshot?
+  coupon   CouponSnapshot?
+  offer    OfferSnapshot?
+
+  subtotal Float
+  discount Float  @default(0)
+  shipping Float  @default(0)
+  tax      Float  @default(0)
+  total    Float 
+
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("orders")
+}
+
+// ──────────────────────────────────────────────
+// Reviews
+// ──────────────────────────────────────────────
+
+model Review {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  productId String   @db.ObjectId
+  rating    Int
+  title     String?
+  text      String?
+  images    String[]
+  status    String   @default("pending")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, productId])
+  @@index([productId])
+  @@index([status])
+  @@map("reviews")
+}
+
+// ──────────────────────────────────────────────
+// Coupons & Offers
+// ──────────────────────────────────────────────
+
+model Coupon {
+  id                     String   @id @default(auto()) @map("_id") @db.ObjectId
+  code                   String   @unique
+  type                   CouponType
+  value                  Float
+  minOrderAmount         Float?
+  maxDiscount            Float?
+  usageLimit             Int?
+  usedCount              Int      @default(0)
+  applicableCategoryIds  String[]
+  applicableProductIds   String[]
+  expiresAt              DateTime?
+  isActive               Boolean  @default(true)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  @@map("coupons")
+}
+
+model Offer {
+  id                     String   @id @default(auto()) @map("_id") @db.ObjectId
+  name                   String
+  description            String?
+  type                   String
+  value                  Float
+  applicableCategoryIds  String[]
+  applicableProductIds   String[]
+  startDate              DateTime?
+  endDate                DateTime?
+  isActive               Boolean  @default(true)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  @@map("offers")
+}
+
+// ──────────────────────────────────────────────
+// Admin / RBAC
+// ──────────────────────────────────────────────
+
+model AdminUser {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  name         String
+  email        String   @unique
+  passwordHash String
+  roleIds      String[]
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("admin_users")
+}
+
+model AdminRole {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  name          String   @unique
+  description   String?
+  permissionIds String[]
+  isSystem      Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("admin_roles")
+}
+
+model Permission {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  key         String   @unique
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+
+  @@map("permissions")
+}
+
+model AdminActivityLog {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  adminUserId String   @db.ObjectId
+  action      String
+  targetType  String?
+  targetId    String?
+  before      Json?
+  after       Json?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  @@index([adminUserId])
+  @@index([createdAt])
+  @@index([action])
+  @@map("admin_activity_logs")
+}
+
+// ──────────────────────────────────────────────
+// Analytics
+// ──────────────────────────────────────────────
+
+model AnalyticsEvent {
+  id            String                 @id @default(auto()) @map("_id") @db.ObjectId
+  type          AnalyticsEventType
+  userId        String?                @db.ObjectId
+  productId     String?                @db.ObjectId
+  variantId     String?                @db.ObjectId
+  sessionId     String
+  deviceInfo    AnalyticsDeviceInfo?
+  location      AnalyticsLocation?
+  trafficSource AnalyticsTrafficSource?
+  properties    Json?
+  createdAt     DateTime               @default(now())
+
+  @@index([type])
+  @@index([productId])
+  @@index([userId])
+  @@index([sessionId])
+  @@index([createdAt])
+  @@map("analytics_events")
+}
+
+// ──────────────────────────────────────────────
+// Notifications
+// ──────────────────────────────────────────────
+
+model Notification {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String?  @db.ObjectId
+  adminUserId String?  @db.ObjectId
+  title       String
+  message     String
+  type        String
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([adminUserId])
+  @@index([isRead])
+  @@map("notifications")
+}
