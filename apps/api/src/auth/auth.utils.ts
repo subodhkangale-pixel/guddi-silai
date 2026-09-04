@@ -1,8 +1,13 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { OAuth2Client } from 'google-auth-library';
 
 import { env } from '../config/env.js';
-import { JwtPayload, PublicUser } from './auth.types.js';
+import {
+  GoogleProfile,
+  JwtPayload,
+  PublicUser,
+} from './auth.types.js';
 
 export function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, env.bcrypt.rounds);
@@ -20,6 +25,31 @@ export function signToken(payload: JwtPayload): string {
 
 export function verifyToken(token: string): JwtPayload {
   return jwt.verify(token, env.jwt.secret) as JwtPayload;
+}
+
+export function signGuestToken(guestId: string): string {
+  return jwt.sign({ sub: guestId, type: 'guest' }, env.jwt.secret, {
+    expiresIn: env.jwt.expiresIn as jwt.SignOptions['expiresIn'],
+  });
+}
+
+export async function verifyGoogleIdToken(idToken: string): Promise<GoogleProfile> {
+  if (!env.google.clientId) {
+    throw new Error('GOOGLE_CLIENT_ID is not configured');
+  }
+  const client = new OAuth2Client(env.google.clientId);
+  const ticket = await client.verifyIdToken({
+    idToken,
+    audience: env.google.clientId,
+  });
+  const payload = ticket.getPayload();
+  return {
+    googleId: payload?.sub ?? '',
+    email: payload?.email ?? null,
+    emailVerified: payload?.email_verified ?? false,
+    name: payload?.name ?? '',
+    picture: payload?.picture ?? null,
+  };
 }
 
 const UNIT_SECONDS: Record<string, number> = {
@@ -56,4 +86,8 @@ export function toPublicUser(user: UserForPublic): PublicUser {
     avatar: user.avatar,
     createdAt: user.createdAt,
   };
+}
+
+export function parseTokenType(type: string): 'user' | 'guest' | null {
+  return type === 'user' || type === 'guest' ? type : null;
 }

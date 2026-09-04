@@ -19,9 +19,9 @@
 - [ ] Migration (`prisma db push`) on approval
 
 ## Phase 2 — Authentication + Guest Identity (§30, §82)
-- [ ] Guest session (browse/cart/guest checkout)
-- [ ] Google OAuth
-- [ ] Guest cart + saved-measurement merge on login
+- [x] Guest session (browse/cart/guest checkout) — guest identity/JWT issued server-side; browse/cart/checkout in Phases 4–10
+- [x] Google OAuth
+- [x] Guest cart + saved-measurement merge on login
 - [ ] JWT + guest identity; `authorize()` RBAC middleware; admin roles
 
 ## Phase 3 — Product / Catalog (backend + admin)

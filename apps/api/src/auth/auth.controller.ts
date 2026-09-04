@@ -50,3 +50,44 @@ export async function logout(
 ): Promise<void> {
   res.json({ data: { message: 'Logged out' } });
 }
+
+export async function createGuest(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const result = await authService.createGuest();
+    res.status(201).json({ data: result });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function googleAuth(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const result = await authService.loginWithGoogle(req.body);
+    res.json({ data: result });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function merge(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const userId = req.user?.id;
+    if (!userId) throw new AppError(401, 'Authentication required');
+    const result = await authService.mergeGuestCart(userId, req.body.guestToken);
+    res.json({ data: result });
+  } catch (err) {
+    next(err);
+  }
+}

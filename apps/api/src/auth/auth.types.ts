@@ -1,6 +1,8 @@
+export type TokenType = 'user' | 'guest';
+
 export interface JwtPayload {
   sub: string;
-  type: 'user';
+  type: TokenType;
   iat?: number;
   exp?: number;
 }
@@ -24,4 +26,21 @@ export interface AuthResult {
   token: string;
   expiresIn: number;
   user: PublicUser;
+}
+
+export interface GuestResult {
+  token: string;
+  expiresIn: number;
+  guest: {
+    id: string;
+    name: string;
+  };
+}
+
+export interface GoogleProfile {
+  googleId: string;
+  email: string | null;
+  emailVerified: boolean;
+  name: string;
+  picture: string | null;
 }

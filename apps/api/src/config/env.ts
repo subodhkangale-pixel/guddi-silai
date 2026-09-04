@@ -27,4 +27,7 @@ export const env = {
   bcrypt: {
     rounds: Number(optional('BCRYPT_ROUNDS', '12')),
   },
+  google: {
+    clientId: optional('GOOGLE_CLIENT_ID', ''),
+  },
 } as const;

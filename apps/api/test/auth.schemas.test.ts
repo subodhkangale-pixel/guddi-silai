@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { loginSchema, registerSchema } from '../src/auth/auth.schemas.js';
+import {
+  googleSchema,
+  loginSchema,
+  mergeSchema,
+  registerSchema,
+} from '../src/auth/auth.schemas.js';
 
 describe('registerSchema', () => {
   it('accepts a valid payload', () => {
@@ -74,5 +79,29 @@ describe('loginSchema', () => {
       email: 'anita@example.com',
     });
     expect(result.success).toBe(false);
+  });
+});
+
+describe('googleSchema', () => {
+  it('accepts a Google ID token', () => {
+    expect(googleSchema.safeParse({ idToken: 'header.payload.sig' }).success).toBe(
+      true
+    );
+  });
+
+  it('rejects a missing ID token', () => {
+    expect(googleSchema.safeParse({}).success).toBe(false);
+  });
+});
+
+describe('mergeSchema', () => {
+  it('accepts a guest token', () => {
+    expect(mergeSchema.safeParse({ guestToken: 'guest.jwt.token' }).success).toBe(
+      true
+    );
+  });
+
+  it('rejects a missing guest token', () => {
+    expect(mergeSchema.safeParse({}).success).toBe(false);
   });
 });
