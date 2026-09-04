@@ -1,4 +1,4 @@
-export type TokenType = 'user' | 'guest';
+export type TokenType = 'user' | 'guest' | 'admin';
 
 export interface JwtPayload {
   sub: string;

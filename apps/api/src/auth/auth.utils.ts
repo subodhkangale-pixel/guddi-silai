@@ -33,6 +33,12 @@ export function signGuestToken(guestId: string): string {
   });
 }
 
+export function signAdminToken(adminId: string): string {
+  return jwt.sign({ sub: adminId, type: 'admin' }, env.jwt.secret, {
+    expiresIn: env.jwt.expiresIn as jwt.SignOptions['expiresIn'],
+  });
+}
+
 export async function verifyGoogleIdToken(idToken: string): Promise<GoogleProfile> {
   if (!env.google.clientId) {
     throw new Error('GOOGLE_CLIENT_ID is not configured');
@@ -88,6 +94,6 @@ export function toPublicUser(user: UserForPublic): PublicUser {
   };
 }
 
-export function parseTokenType(type: string): 'user' | 'guest' | null {
-  return type === 'user' || type === 'guest' ? type : null;
+export function parseTokenType(type: string): 'user' | 'guest' | 'admin' | null {
+  return type === 'user' || type === 'guest' || type === 'admin' ? type : null;
 }

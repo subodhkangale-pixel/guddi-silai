@@ -22,7 +22,7 @@
 - [x] Guest session (browse/cart/guest checkout) — guest identity/JWT issued server-side; browse/cart/checkout in Phases 4–10
 - [x] Google OAuth
 - [x] Guest cart + saved-measurement merge on login
-- [ ] JWT + guest identity; `authorize()` RBAC middleware; admin roles
+- [x] JWT + guest identity; `authorize()` RBAC middleware; admin roles
 
 ## Phase 3 — Product / Catalog (backend + admin)
 - [ ] Product + variant CRUD (§45 fields incl. designId, category, sub-category, type, price, discount, colors,

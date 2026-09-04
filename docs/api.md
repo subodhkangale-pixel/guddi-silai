@@ -91,6 +91,34 @@ Guest wishlist is **browser-local** (§26), so no server guest-wishlist API is n
 - Sub-areas: users/roles, activity logs, products, categories, inventory (including **fiber inventory** §48),
   orders, coupons/offers, reviews moderation, enquiries, notifications, analytics dashboards + export.
 
+### 2.1 Implemented — Admin authentication + RBAC middleware (Phase 2)
+
+- `POST /admin/auth/login` — body (Zod): `{ email: email, password: string (1–128) }`. Verifies bcrypt hash,
+  checks `isActive`, resolves the admin's effective permissions server-side, and returns
+  `200` with `{ data: { token, expiresIn, admin: { id, name, email, roleIds, permissions } } }`. Generic
+  `401 "Invalid credentials"`; `403` for disabled accounts. Rate-limited like `/auth/*`.
+- `GET /admin/auth/me` — requires a bearer **admin token** (`type: "admin"`). Returns the current admin with
+  resolved permissions. `401` if unauthenticated.
+
+Admin tokens are signed JWTs with `type: "admin"` (distinct from user/guest tokens). Authorization is enforced
+by two middlewares:
+- `requireAdmin` — authenticates an admin token and loads the `AdminUser` (rejects missing/invalid tokens,
+  non-`admin` claims, and inactive admins).
+- `authorize('order:read', …)` — checks the admin's resolved permissions **server-side on every request** (per
+  `api.md` §0.1 "never trust client values for permissions"); returns `403` if any required permission is
+  missing. A `*` wildcard permission grants everything.
+
+Permissions are `{domain}:{action}` keys grouped into roles and stored in the DB
+(`permissions` / `admin_roles` / `admin_users`). Constants live in `packages/shared` so names stay consistent
+(ADR-013): `product:*`, `catalogue:*`, `inventory:*`, `order:*`, `coupon:write`, `offer:write`,
+`reports:view`, `admin:manage`, `enquiry:manage`, `notification:manage`. Sample role mapping:
+SUPER_ADMIN = all; PRODUCT_MANAGER = product/catalogue/inventory; ORDER_MANAGER = order + enquiry;
+STITCHING_MANAGER = order; ANALYST = `reports:view`.
+
+`logAdminActivity()` writes an `AdminActivityLog` audit entry (admin, action, target, before/after, IP, UA) and
+should be called on every sensitive mutation. Bootstrap data (permissions, roles, initial SUPER_ADMIN from
+`ADMIN_EMAIL`/`ADMIN_PASSWORD`) is created by `prisma db:seed`.
+
 ---
 
 ## 3. /products (R §31–§33, §45)
