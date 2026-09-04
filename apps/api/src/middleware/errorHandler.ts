@@ -1,12 +1,22 @@
 import { Request, Response, NextFunction } from 'express';
 
+interface AppErrorOptions {
+  isOperational?: boolean;
+  details?: unknown;
+}
+
 export class AppError extends Error {
+  public readonly isOperational: boolean;
+  public readonly details?: unknown;
+
   constructor(
     public readonly statusCode: number,
-    public readonly message: string,
-    public readonly isOperational = true
+    message: string,
+    options: AppErrorOptions = {}
   ) {
     super(message);
+    this.isOperational = options.isOperational ?? true;
+    this.details = options.details;
     Object.setPrototypeOf(this, AppError.prototype);
   }
 }
@@ -18,9 +28,13 @@ export function errorHandler(
   _next: NextFunction
 ) {
   if (err instanceof AppError) {
-    return res.status(err.statusCode).json({
+    const body: Record<string, unknown> = {
       error: err.message,
-    });
+    };
+    if (err.details !== undefined) {
+      body.details = err.details;
+    }
+    return res.status(err.statusCode).json(body);
   }
 
   console.error('Unhandled error:', err);

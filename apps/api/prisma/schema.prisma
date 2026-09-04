@@ -418,16 +418,17 @@ model FiberInventory {
 // ──────────────────────────────────────────────
 
 model User {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  name      String
-  email     String?  @unique
-  googleId  String?  @unique
-  mobile    String?
-  avatar    String?
-  isGuest   Boolean  @default(false)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  name         String
+  email        String?  @unique
+  googleId     String?  @unique
+  mobile       String?
+  avatar       String?
+  passwordHash String?
+  isGuest      Boolean  @default(false)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@map("users")
 }

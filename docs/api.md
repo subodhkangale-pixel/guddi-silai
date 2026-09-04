@@ -1,6 +1,7 @@
 # Guddi Silai — API Architecture (Design)
 
-> Status: **Design only.** Validated against `docs/requirements.pdf`. No endpoints are implemented yet.
+> Status: **Design + implemented foundation.** Validated against `docs/requirements.pdf`.
+> The authentication foundation (Section 1) is implemented. Product/cart/order/payment endpoints are design only.
 > Base path `/api/v1`. JSON over HTTP.
 
 ---
@@ -32,10 +33,31 @@
 ## 1. /auth — Authentication + Guest Identity (R §30, §82)
 
 Options: **Continue as Guest**, **Continue with Google**. Login optional.
-- `POST /auth/guest` — issue guest session (browse/cart).
-- `POST /auth/google` — Google OAuth exchange (account create/login + link).
-- `POST /auth/merge` — merge guest cart (and, where relevant, saved measurements) into account.
+- `POST /auth/guest` — issue guest session (browse/cart). *(pending — Phase 2)*
+- `POST /auth/google` — Google OAuth exchange (account create/login + link). *(pending — Phase 2)*
+- `POST /auth/merge` — merge guest cart (and, where relevant, saved measurements) into account. *(pending — Phase 2)*
 - (O) Email/password registration only if required (PDF shows Google + guest only).
+
+### 1.1 Implemented — Authentication foundation (Phase 2.1)
+
+Email/password authentication is implemented as the foundation, kept compatible with the later Google/guest
+flows. All endpoints JSON over `/api/v1/auth`. Auth uses **Bearer JWT** returned in the response body; the client
+attaches it as `Authorization: Bearer <token>`. Guest identity is a separate Phase 2 concern.
+
+- `POST /auth/register` — create an account. Body (Zod):
+  `{ name: string (2–120), email: email, password: string (8–128) }`.
+  Returns `201` with `{ data: { token, expiresIn, user } }`. `409` if the email already exists.
+  Password is stored only as a bcrypt hash; the hash is never returned.
+- `POST /auth/login` — authenticate. Body (Zod): `{ email: email, password: string (1–128) }`.
+  Returns `200` with `{ data: { token, expiresIn, user } }`. On bad credentials returns a generic
+  `401 "Invalid email or password"` (does not reveal whether the account exists).
+- `GET /auth/me` — requires `Bearer` JWT. Returns `200` with `{ data: { user } }` for the current user
+  (id, name, email, mobile, avatar, createdAt). `401` if unauthenticated.
+- `POST /auth/logout` — requires `Bearer` JWT. Stateless JWT logout: the client discards the token; returns
+  `200` with a confirmation. `401` if unauthenticated.
+
+Security: JWT secret and expiration are read from environment variables (`JWT_SECRET`, `JWT_EXPIRES_IN`);
+`BCRYPT_ROUNDS` controls bcrypt cost. `/auth/register` and `/auth/login` are rate-limited (see api.md §0.5).
 
 Guest wishlist is **browser-local** (§26), so no server guest-wishlist API is needed (client handles it).
 
