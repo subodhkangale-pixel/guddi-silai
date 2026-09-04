@@ -1,6 +1,7 @@
 # Guddi Silai — API Architecture (Design)
 
-> Status: **Design only.** Validated against `docs/requirements.pdf`. No endpoints are implemented yet.
+> Status: **Design + implemented foundation.** Validated against `docs/requirements.pdf`.
+> The authentication section (Section 1) is implemented. Product/cart/order/payment endpoints are design only.
 > Base path `/api/v1`. JSON over HTTP.
 
 ---
@@ -37,6 +38,47 @@ Options: **Continue as Guest**, **Continue with Google**. Login optional.
 - `POST /auth/merge` — merge guest cart (and, where relevant, saved measurements) into account.
 - (O) Email/password registration only if required (PDF shows Google + guest only).
 
+### 1.1 Implemented — Authentication foundation (Phase 2)
+
+Email/password authentication, guest sessions, Google OAuth, and guest→account merge are implemented.
+All endpoints JSON over `/api/v1/auth`. Auth uses **Bearer JWT** returned in the response body; the client
+attaches it as `Authorization: Bearer <token>`.
+
+- `POST /auth/register` — create an account. Body (Zod):
+  `{ name: string (2–120), email: email, password: string (8–128) }`.
+  Returns `201` with `{ data: { token, expiresIn, user } }`. `409` if the email already exists.
+  Password is stored only as a bcrypt hash; the hash is never returned.
+- `POST /auth/login` — authenticate. Body (Zod): `{ email: email, password: string (1–128) }`.
+  Returns `200` with `{ data: { token, expiresIn, user } }`. On bad credentials returns a generic
+  `401 "Invalid email or password"` (does not reveal whether the account exists).
+- `GET /auth/me` — requires `Bearer` JWT. Returns `200` with `{ data: { user } }` for the current user
+  (id, name, email, mobile, avatar, createdAt). `401` if unauthenticated.
+- `POST /auth/logout` — requires `Bearer` JWT. Stateless JWT logout: the client discards the token; returns
+  `200` with a confirmation. `401` if unauthenticated.
+- `POST /auth/guest` — issue a new guest session (no body). Creates an anonymous `guest` user and returns
+  `201` with `{ data: { token, expiresIn, guest: { id, name } } }`. The guest token is a signed JWT with
+  `type: "guest"` and is used to key the **server-side guest cart** (§8). Guests are rejected by
+  authenticated-only routes (`requireAuth`), so a user token is required for `/auth/me`, `/auth/logout`,
+  and `/auth/merge`.
+- `POST /auth/google` — Google OAuth exchange. Body (Zod): `{ idToken: string }` (Google ID token obtained
+  client-side). The server verifies the token with the Google client ID (`GOOGLE_CLIENT_ID`) and returns
+  `200` with `{ data: { token, expiresIn, user } }`. Behavior:
+  - existing account matched by `googleId` → login;
+  - match by **verified** email → link `googleId` to that account → login;
+  - match to a `guest` account with that email → upgrade it to a full account (cart is owned by the same id, so it is kept) → login;
+  - no match → create a new account → login.
+  Unverified emails are rejected (`403`); invalid tokens return `401`. `emailVerified: true` required.
+- `POST /auth/merge` — requires `Bearer` user JWT. Body (Zod): `{ guestToken: string }`. Verifies the guest
+  token, merges the guest server-side cart into the user's cart, deletes the guest cart, and deactivates the
+  guest user (invalidates the guest session). Returns `200` with
+  `{ data: { merged: boolean, itemsMerged: number } }`. Duplicate lines (same product/variant/color/size/
+  fiber/embroidery/measurements) are combined by summing quantity; the user cart's price snapshot is retained.
+  Guest measurements travel with cart items (they are temp values inside `CartItem`); no separate profile merge.
+
+Security: JWT secret and expiration are read from environment variables (`JWT_SECRET`, `JWT_EXPIRES_IN`),
+`BCRYPT_ROUNDS` controls bcrypt cost, and `GOOGLE_CLIENT_ID` is the audience used to verify Google ID tokens.
+`/auth/register`, `/auth/login`, `/auth/guest`, and `/auth/google` are rate-limited (see api.md §0.5).
+
 Guest wishlist is **browser-local** (§26), so no server guest-wishlist API is needed (client handles it).
 
 ---
@@ -48,6 +90,34 @@ Guest wishlist is **browser-local** (§26), so no server guest-wishlist API is n
 - Central `authorize()` permission middleware; **admin activity logging** on every sensitive mutation (§64).
 - Sub-areas: users/roles, activity logs, products, categories, inventory (including **fiber inventory** §48),
   orders, coupons/offers, reviews moderation, enquiries, notifications, analytics dashboards + export.
+
+### 2.1 Implemented — Admin authentication + RBAC middleware (Phase 2)
+
+- `POST /admin/auth/login` — body (Zod): `{ email: email, password: string (1–128) }`. Verifies bcrypt hash,
+  checks `isActive`, resolves the admin's effective permissions server-side, and returns
+  `200` with `{ data: { token, expiresIn, admin: { id, name, email, roleIds, permissions } } }`. Generic
+  `401 "Invalid credentials"`; `403` for disabled accounts. Rate-limited like `/auth/*`.
+- `GET /admin/auth/me` — requires a bearer **admin token** (`type: "admin"`). Returns the current admin with
+  resolved permissions. `401` if unauthenticated.
+
+Admin tokens are signed JWTs with `type: "admin"` (distinct from user/guest tokens). Authorization is enforced
+by two middlewares:
+- `requireAdmin` — authenticates an admin token and loads the `AdminUser` (rejects missing/invalid tokens,
+  non-`admin` claims, and inactive admins).
+- `authorize('order:read', …)` — checks the admin's resolved permissions **server-side on every request** (per
+  `api.md` §0.1 "never trust client values for permissions"); returns `403` if any required permission is
+  missing. A `*` wildcard permission grants everything.
+
+Permissions are `{domain}:{action}` keys grouped into roles and stored in the DB
+(`permissions` / `admin_roles` / `admin_users`). Constants live in `packages/shared` so names stay consistent
+(ADR-013): `product:*`, `catalogue:*`, `inventory:*`, `order:*`, `coupon:write`, `offer:write`,
+`reports:view`, `admin:manage`, `enquiry:manage`, `notification:manage`. Sample role mapping:
+SUPER_ADMIN = all; PRODUCT_MANAGER = product/catalogue/inventory; ORDER_MANAGER = order + enquiry;
+STITCHING_MANAGER = order; ANALYST = `reports:view`.
+
+`logAdminActivity()` writes an `AdminActivityLog` audit entry (admin, action, target, before/after, IP, UA) and
+should be called on every sensitive mutation. Bootstrap data (permissions, roles, initial SUPER_ADMIN from
+`ADMIN_EMAIL`/`ADMIN_PASSWORD`) is created by `prisma db:seed`.
 
 ---
 

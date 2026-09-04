@@ -176,6 +176,42 @@ export const ADMIN_ROLES = [
 
 export type AdminRoleName = (typeof ADMIN_ROLES)[number];
 
+export const ADMIN_PERMISSIONS = [
+  'product:read',
+  'product:write',
+  'catalogue:read',
+  'catalogue:write',
+  'inventory:read',
+  'inventory:write',
+  'order:read',
+  'order:write',
+  'coupon:write',
+  'offer:write',
+  'reports:view',
+  'admin:manage',
+  'enquiry:manage',
+  'notification:manage',
+] as const;
+
+export type AdminPermission = (typeof ADMIN_PERMISSIONS)[number];
+
+export const ROLE_PERMISSIONS: Record<AdminRoleName, readonly AdminPermission[]> = {
+  SUPER_ADMIN: [...ADMIN_PERMISSIONS],
+  ORDER_MANAGER: ['order:read', 'order:write', 'enquiry:manage'],
+  PRODUCT_MANAGER: [
+    'product:read',
+    'product:write',
+    'catalogue:read',
+    'catalogue:write',
+    'inventory:read',
+    'inventory:write',
+  ],
+  STITCHING_MANAGER: ['order:read', 'order:write'],
+  ANALYST: ['reports:view'],
+};
+
+export const WILDCARD_PERMISSION = '*';
+
 // ──────────────────────────────────────────────
 // Base Utility Types
 // ──────────────────────────────────────────────
