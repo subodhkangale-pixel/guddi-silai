@@ -24,12 +24,15 @@
 - [x] Guest cart + saved-measurement merge on login
 - [x] JWT + guest identity; `authorize()` RBAC middleware; admin roles
 
-## Phase 3 — Product / Catalog (backend + admin)
-- [ ] Product + variant CRUD (§45 fields incl. designId, category, sub-category, type, price, discount, colors,
+## Phase 3 — Product / Catalog (backend + admin) (COMPLETE)
+- [x] Product + variant CRUD (§45 fields incl. designId, category, sub-category, type, price, discount, colors,
         sizes, fiber, embroidery, images, videos/GIF, stock, SKU, tags, SEO)
-- [ ] Category / sub-category / color / size / fiber (with price) / embroidery CRUD (not hard-coded)
-- [ ] Powerful search (§31: name, design ID, category, color, fiber, embroidery)
-- [ ] Filters (§32) + sort (§33) + cursor pagination/infinite scroll
+- [x] Category / sub-category / color / size / fiber (with price) / embroidery CRUD (not hard-coded)
+- [x] Powerful search (§31: name, design ID, category, color, fiber, embroidery)
+- [x] Filters (§32) + sort (§33) + cursor pagination/infinite scroll
+- [x] Public catalog frontend (`/products`): search, filters, sort, infinite scroll, product detail (`/products/:slug`)
+- [x] Admin frontend (`/admin`): login, catalogue reference CRUD, product + variant management
+- [x] Sample catalogue + products seeded via `prisma db:seed`
 
 ## Phase 4 — Product Browsing (frontend)
 - [ ] Homepage with direct product feed + infinite scroll (§2, §5) — cursor pagination

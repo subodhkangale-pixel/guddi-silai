@@ -13,7 +13,6 @@ module.exports = {
     project: './tsconfig.json',
   },
   rules: {
-    'no-unused-vars': 'warn',
     'no-console': 'warn',
     'prefer-const': 'error',
     'no-var': 'error',

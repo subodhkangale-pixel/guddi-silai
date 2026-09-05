@@ -11,13 +11,13 @@ function Home() {
         </p>
         <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
           <a
-            href="#"
+            href="/products"
             className="bg-pink-600 text-white px-8 py-3 rounded-lg text-lg font-medium hover:bg-pink-700 transition-colors"
           >
             Explore Collection
           </a>
           <a
-            href="#"
+            href="/products"
             className="border-2 border-gray-300 text-gray-700 px-8 py-3 rounded-lg text-lg font-medium hover:bg-gray-50 transition-colors"
           >
             Customize Now

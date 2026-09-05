@@ -95,8 +95,8 @@ type ProductSEO {
 }
 
 type ProductVariantOption {
-  colorId String @db.ObjectId
-  sizeId  String @db.ObjectId
+  colorId String? @db.ObjectId
+  sizeId  String? @db.ObjectId
 }
 
 type FiberOption {

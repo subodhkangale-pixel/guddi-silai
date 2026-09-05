@@ -1,0 +1,71 @@
+import { Link } from 'react-router-dom';
+import { ProductCard as ProductCardType } from '../api/types';
+import { formatPrice } from '../lib/format';
+
+const AVAILABILITY_LABEL: Record<ProductCardType['availability'], string> = {
+  in_stock: 'In Stock',
+  out_of_stock: 'Out of Stock',
+  upcoming: 'Upcoming',
+  showcase: 'Showcase',
+};
+
+const AVAILABILITY_STYLE: Record<ProductCardType['availability'], string> = {
+  in_stock: 'bg-green-100 text-green-700',
+  out_of_stock: 'bg-red-100 text-red-700',
+  upcoming: 'bg-amber-100 text-amber-700',
+  showcase: 'bg-gray-100 text-gray-600',
+};
+
+function ProductCard({ product }: { product: ProductCardType }) {
+  const hasDiscount =
+    product.compareAtPrice != null &&
+    product.compareAtPrice > product.basePrice;
+  const compareAt = product.compareAtPrice;
+
+  return (
+    <Link
+      to={`/products/${product.slug}`}
+      className="group block bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
+    >
+      <div className="aspect-[4/5] bg-gray-100 overflow-hidden">
+        {product.images.length > 0 ? (
+          <img
+            src={product.images[0]}
+            alt={product.name}
+            loading="lazy"
+            className="h-full w-full object-cover group-hover:scale-105 transition-transform"
+          />
+        ) : (
+          <div className="h-full w-full flex items-center justify-center text-gray-400">
+            No image
+          </div>
+        )}
+      </div>
+      <div className="p-4">
+        {product.designId && (
+          <p className="text-xs font-medium text-purple-600">{product.designId}</p>
+        )}
+        <h3 className="mt-1 text-sm font-medium text-gray-900 line-clamp-2">
+          {product.name}
+        </h3>
+        <div className="mt-2 flex items-center gap-2">
+          <span className="text-base font-semibold text-gray-900">
+            {formatPrice(product.basePrice)}
+          </span>
+          {hasDiscount && (
+            <span className="text-sm text-gray-400 line-through">
+              {formatPrice(compareAt as number)}
+            </span>
+          )}
+        </div>
+        <span
+          className={`mt-2 inline-block rounded-full px-2 py-0.5 text-xs font-medium ${AVAILABILITY_STYLE[product.availability]}`}
+        >
+          {AVAILABILITY_LABEL[product.availability]}
+        </span>
+      </div>
+    </Link>
+  );
+}
+
+export default ProductCard;
