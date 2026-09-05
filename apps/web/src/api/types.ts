@@ -128,6 +128,7 @@ export interface ProductQuery {
   sizeId?: string;
   fiberId?: string;
   embroideryId?: string;
+  occasion?: string;
   minPrice?: number;
   maxPrice?: number;
   availability?: AvailabilityFilter;

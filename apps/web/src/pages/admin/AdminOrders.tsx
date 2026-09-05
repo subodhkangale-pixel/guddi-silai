@@ -115,6 +115,11 @@ function OrderDetailPanel({ orderQuery }: { orderQuery: { isPending: boolean; is
                     {item.color ? ` · ${item.color}` : ''}
                     {item.size ? ` · ${item.size}` : ''}
                   </p>
+                  {item.styleOptions && (() => {
+                    const entries = Object.entries(item.styleOptions).filter(([, value]) => Boolean(value));
+                    if (entries.length === 0) return null;
+                    return <p className="mt-0.5 text-xs text-gray-500">{entries.map(([key, value]) => `${key.replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase())}: ${value}`).join(' · ')}</p>;
+                  })()}
                 </div>
                 <strong>{formatPrice(item.total)}</strong>
               </div>
@@ -141,6 +146,7 @@ function OrderDetailPanel({ orderQuery }: { orderQuery: { isPending: boolean; is
           <div className="flex justify-between gap-8"><span>Subtotal</span><span>{formatPrice(order.subtotal)}</span></div>
           {offerDiscount > 0 && <div className="flex justify-between gap-8 text-green-700"><span>Offer ({order.offer?.name})</span><span>−{formatPrice(offerDiscount)}</span></div>}
           {couponDiscount > 0 && <div className="flex justify-between gap-8 text-green-700"><span>Coupon ({order.coupon?.code})</span><span>−{formatPrice(couponDiscount)}</span></div>}
+          {order.addons && order.addons.length > 0 && <div className="flex justify-between gap-8"><span>Add-ons ({order.addons.length})</span><span>+{formatPrice(order.addons.reduce((sum, addon) => sum + addon.price * addon.quantity, 0))}</span></div>}
           <div className="flex justify-between gap-8"><span>Shipping</span><span>{order.shipping > 0 ? formatPrice(order.shipping) : 'Free'}</span></div>
         </div>
         <div className="text-lg font-bold text-gray-900">Total: {formatPrice(order.total)}</div>
@@ -149,6 +155,20 @@ function OrderDetailPanel({ orderQuery }: { orderQuery: { isPending: boolean; is
       {order.notes && (
         <div className="rounded-md bg-gray-50 p-3 text-sm">
           <span className="font-semibold text-gray-500">Notes:</span> <span className="text-gray-700">{order.notes}</span>
+        </div>
+      )}
+
+      {order.addons && order.addons.length > 0 && (
+        <div className="rounded-md bg-gray-50 p-3 text-sm">
+          <span className="font-semibold text-gray-500">Add-ons:</span>
+          <div className="mt-1 space-y-0.5">
+            {order.addons.map((addon, index) => (
+              <div key={index} className="flex items-baseline justify-between gap-3">
+                <span className="text-gray-700">{addon.name}{addon.description ? <span className="block text-xs text-gray-500">{addon.description}</span> : null}</span>
+                <strong className="whitespace-nowrap">{formatPrice(addon.price)} {addon.quantity > 1 ? `× ${addon.quantity}` : ''}</strong>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

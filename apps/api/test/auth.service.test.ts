@@ -14,6 +14,9 @@ const mocks = vi.hoisted(() => ({
       findUnique: vi.fn(),
       update: vi.fn(),
     },
+    order: {
+      updateMany: vi.fn(),
+    },
   },
   verifyGoogleIdToken: vi.fn(),
   verifyToken: vi.fn(),
@@ -43,6 +46,7 @@ function resetAll() {
   mocks.prisma.cart.findFirst.mockReset();
   mocks.prisma.cart.findUnique.mockReset();
   mocks.prisma.cart.update.mockReset();
+  mocks.prisma.order.updateMany.mockReset();
   mocks.verifyGoogleIdToken.mockReset();
   mocks.verifyToken.mockReset();
 }
@@ -349,5 +353,26 @@ describe('mergeGuestCart', () => {
     await expect(
       authService.mergeGuestCart('user-1', 'guest-token')
     ).rejects.toMatchObject({ statusCode: 400 });
+  });
+
+  it('transfers guest orders to the new account on merge', async () => {
+    mocks.verifyToken.mockReturnValue({ sub: 'guest-1', type: 'guest' });
+    mocks.prisma.user.findUnique.mockResolvedValue(guestUser('guest-1'));
+    mocks.prisma.cart.findUnique.mockResolvedValue({
+      id: 'cart-g',
+      ownerKey: 'guest-1',
+      items: [guestItem],
+    });
+    mocks.prisma.cart.findFirst.mockResolvedValue(null);
+    mocks.prisma.cart.create.mockResolvedValue({ id: 'cart-u' });
+    mocks.prisma.order.updateMany.mockResolvedValue({ count: 2 });
+
+    const result = await authService.mergeGuestCart('user-1', 'guest-token');
+
+    expect(result).toEqual({ merged: true, itemsMerged: 1 });
+    expect(mocks.prisma.order.updateMany).toHaveBeenCalledWith({
+      where: { userId: 'guest-1' },
+      data: { userId: 'user-1' },
+    });
   });
 });

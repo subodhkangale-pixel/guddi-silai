@@ -1,6 +1,7 @@
 import { apiRequest } from './client';
+import { resolveIdentityToken } from './authApi';
 
-const GUEST_TOKEN_KEY = 'guddi-silai-guest-token';
+export { ensureGuestToken } from './authApi';
 
 export interface CartItem {
   productType: 'READY_MADE' | 'CUSTOMIZE';
@@ -24,6 +25,7 @@ export interface CartItem {
   quantity: number;
   measurementStatus: string | null;
   measurementValues: unknown;
+  styleOptions?: { neckline?: string; sleeveStyle?: string; backDesign?: string; embroideryPlacement?: string; fitting?: string } | null;
 }
 
 export interface CartSections {
@@ -51,6 +53,11 @@ export interface AddCartItemInput {
   fiberId?: string;
   embroideryId?: string;
   quantity?: number;
+  styleOptions?: { neckline?: string; sleeveStyle?: string; backDesign?: string; embroideryPlacement?: string; fitting?: string };
+}
+
+export interface UpdateStyleOptionsInput {
+  styleOptions: { neckline?: string; sleeveStyle?: string; backDesign?: string; embroideryPlacement?: string; fitting?: string };
 }
 
 export interface MeasurementValue {
@@ -61,23 +68,13 @@ export interface MeasurementValue {
   unit: 'INCHES' | 'CM';
 }
 
-export async function ensureGuestToken(): Promise<string> {
-  const saved = window.localStorage.getItem(GUEST_TOKEN_KEY);
-  if (saved) return saved;
-  const result = await apiRequest<{ data: { token: string } }>('/auth/guest', {
-    method: 'POST',
-  });
-  window.localStorage.setItem(GUEST_TOKEN_KEY, result.data.token);
-  return result.data.token;
-}
-
 export async function getCart() {
-  const token = await ensureGuestToken();
+  const token = await resolveIdentityToken();
   return apiRequest<{ data: Cart }>('/cart', { token });
 }
 
 export async function addCartItem(input: AddCartItemInput) {
-  const token = await ensureGuestToken();
+  const token = await resolveIdentityToken();
   return apiRequest<{ data: Cart }>('/cart/items', {
     method: 'POST',
     token,
@@ -86,7 +83,7 @@ export async function addCartItem(input: AddCartItemInput) {
 }
 
 export async function updateCartItem(index: number, quantity: number) {
-  const token = await ensureGuestToken();
+  const token = await resolveIdentityToken();
   return apiRequest<{ data: Cart }>(`/cart/items/${index}`, {
     method: 'PATCH',
     token,
@@ -94,8 +91,17 @@ export async function updateCartItem(index: number, quantity: number) {
   });
 }
 
+export async function updateStyleOptions(index: number, styleOptions: UpdateStyleOptionsInput['styleOptions']) {
+  const token = await resolveIdentityToken();
+  return apiRequest<{ data: Cart }>(`/cart/items/${index}/style-options`, {
+    method: 'PATCH',
+    token,
+    body: { styleOptions },
+  });
+}
+
 export async function updateMeasurements(index: number, values: MeasurementValue[]) {
-  const token = await ensureGuestToken();
+  const token = await resolveIdentityToken();
   return apiRequest<{ data: Cart }>(`/cart/items/${index}/measurements`, {
     method: 'POST',
     token,
@@ -104,16 +110,16 @@ export async function updateMeasurements(index: number, values: MeasurementValue
 }
 
 export async function clearCart() {
-  const token = await ensureGuestToken();
+  const token = await resolveIdentityToken();
   return apiRequest<{ data: Cart }>('/cart', { method: 'DELETE', token });
 }
 
 export async function applyCoupon(code: string) {
-  const token = await ensureGuestToken();
+  const token = await resolveIdentityToken();
   return apiRequest<{ data: { cart: Cart; discount: number } }>('/coupons/apply', { method: 'POST', token, body: { code } });
 }
 
 export async function removeCoupon() {
-  const token = await ensureGuestToken();
+  const token = await resolveIdentityToken();
   return apiRequest<{ data: Cart }>('/coupons', { method: 'DELETE', token });
 }

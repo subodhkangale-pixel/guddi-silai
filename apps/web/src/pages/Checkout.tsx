@@ -2,7 +2,7 @@ import { FormEvent, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import Spinner from '../components/Spinner';
-import { useCart, useCreateOrder } from '../api/hooks';
+import { useCart, useCreateOrder, useAddons } from '../api/hooks';
 import { createPayment, verifyPayment } from '../api/paymentApi';
 import { estimateShipping, checkPincode } from '../api/deliveryApi';
 import { formatPrice } from '../lib/format';
@@ -28,8 +28,10 @@ declare global {
 function CheckoutPage() {
   const cart = useCart();
   const createOrder = useCreateOrder();
+  const addons = useAddons();
   const [form, setForm] = useState(initialForm);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('UPI');
+  const [selectedAddons, setSelectedAddons] = useState<string[]>([]);
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [isPaying, setIsPaying] = useState(false);
   const [paid, setPaid] = useState(false);
@@ -121,7 +123,13 @@ function CheckoutPage() {
   const customItems = items.filter((item) => item.productType === 'CUSTOMIZE');
   const grossSubtotal = (cart.data?.data.sections?.readyMade.subtotal ?? 0) + (cart.data?.data.sections?.customize.subtotal ?? 0);
   const discount = cart.data?.data.discount ?? 0;
-  const total = ((cart.data?.data.totalPrice ?? 0) + shipping);
+  const addonsData = addons.data?.data ?? [];
+  const addonTotal = addonsData.filter((a) => selectedAddons.includes(a.id)).reduce((sum, a) => sum + a.price, 0);
+  const total = ((cart.data?.data.totalPrice ?? 0) + addonTotal + shipping);
+
+  function toggleAddon(id: string) {
+    setSelectedAddons((current) => (current.includes(id) ? current.filter((a) => a !== id) : [...current, id]));
+  }
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -131,7 +139,7 @@ function CheckoutPage() {
       return;
     }
     createOrder.mutate(
-      { ...form, shipping, paymentMethod },
+      { ...form, shipping, paymentMethod, addonIds: selectedAddons.length > 0 ? selectedAddons : undefined },
       {
         onSuccess: (result) => {
           if (online) void startPayment(result.data.orderNumber);
@@ -162,6 +170,25 @@ function CheckoutPage() {
           </div>
           <label className="block text-sm font-medium text-gray-700">Address<textarea required value={form.address} onChange={(event) => setForm({ ...form, address: event.target.value })} rows={3} className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2" /></label>
           <label className="block text-sm font-medium text-gray-700">Order notes (optional)<textarea value={form.notes} onChange={(event) => setForm({ ...form, notes: event.target.value })} rows={2} className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2" /></label>
+          <div>
+            <div className="flex items-baseline justify-between"><h2 className="text-lg font-semibold text-gray-900">Add-ons</h2><p className="text-xs text-gray-500">Optional extras for your order</p></div>
+            {addons.isPending ? <p className="mt-3 text-sm text-gray-500">Loading available add-ons…</p> : (
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                {addonsData.map((addon) => {
+                  const checked = selectedAddons.includes(addon.id);
+                  return (
+                    <label key={addon.id} className={`flex cursor-pointer items-start gap-3 rounded-md border p-3 ${checked ? 'border-pink-600 bg-pink-50' : 'border-gray-200'}`}>
+                      <input type="checkbox" checked={checked} onChange={() => toggleAddon(addon.id)} className="mt-0.5" />
+                      <span>
+                        <span className="flex items-baseline justify-between gap-2"><span className="text-sm font-semibold text-gray-900">{addon.name}</span><span className="text-sm font-bold text-pink-600">+{formatPrice(addon.price)}</span></span>
+                        {addon.description && <span className="mt-0.5 block text-xs text-gray-500">{addon.description}</span>}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+          </div>
           {(createOrder.isError || paymentError) && <p className="text-sm text-red-700">{paymentError ?? createOrder.error?.message}</p>}
         </section>
         <aside className="h-fit rounded-lg border border-gray-200 p-5">
@@ -171,6 +198,7 @@ function CheckoutPage() {
           <div className="mt-4 space-y-2 border-t border-gray-200 pt-4 text-sm text-gray-600">
             <div className="flex justify-between"><span>Subtotal</span><span>{formatPrice(grossSubtotal)}</span></div>
             {discount > 0 && <div className="flex justify-between text-green-700"><span>Discount</span><span>−{formatPrice(discount)}</span></div>}
+            {addonTotal > 0 && <div className="flex justify-between"><span>Add-ons ({addonsData.filter((a) => selectedAddons.includes(a.id)).length})</span><span>+{formatPrice(addonTotal)}</span></div>}
             <div className="flex justify-between"><span>Shipping</span><span>{shipping > 0 ? formatPrice(shipping) : 'Free'}</span></div>
           </div>
           <div className="mt-3 flex justify-between border-t border-gray-200 pt-3 text-lg font-bold text-gray-900"><span>Total</span><span>{formatPrice(total)}</span></div>

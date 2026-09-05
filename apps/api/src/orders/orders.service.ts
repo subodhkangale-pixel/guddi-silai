@@ -39,8 +39,19 @@ export async function createOrder(ownerKey: string, input: CreateOrderInput) {
   const subtotal = Number(cart.items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0).toFixed(2));
   const couponDiscount = Number((cart.couponCode ? (cart.discount ?? 0) : 0).toFixed(2));
   const discount = Number((cart.discount ?? 0).toFixed(2));
-  const total = Number(cart.totalPrice.toFixed(2));
+  const baseTotal = Number(cart.totalPrice.toFixed(2));
   const coupon = cart.couponCode ? await prisma.coupon.findUnique({ where: { code: cart.couponCode } }) : null;
+
+  const addonIds = input.addonIds ?? [];
+  const addons = addonIds.length
+    ? await prisma.addon.findMany({ where: { id: { in: addonIds }, isActive: true } })
+    : [];
+  if (addons.length !== addonIds.length) {
+    throw new AppError(400, 'One or more add-ons are unavailable');
+  }
+  const addonTotal = Number(addons.reduce((sum, addon) => sum + addon.price, 0).toFixed(2));
+  const shippingTotal = Number((input.shipping ?? 0).toFixed(2));
+  const total = Number((baseTotal + addonTotal + shippingTotal).toFixed(2));
 
   const offerApplied = (cart.offerDiscount ?? 0) > 0;
   const offer: { name: string; type: string; discount: number } | null = offerApplied
@@ -103,23 +114,29 @@ export async function createOrder(ownerKey: string, input: CreateOrderInput) {
         unitPrice: item.unitPrice,
         discount: item.discount,
         measurementSnapshot: measurementSnapshotFor(item),
+        styleOptions: item.styleOptions ?? null,
         customizationNotes: null,
         total: Number((item.unitPrice * item.quantity).toFixed(2)),
+      })),
+      addons: addons.map((addon) => ({
+        addonId: addon.id,
+        name: addon.name,
+        price: addon.price,
       })),
       payment: {
         method: storedMethod,
         status: PaymentStatus.PENDING,
         transactionId: null,
-        amount: Number((total + (input.shipping ?? 0)).toFixed(2)),
+        amount: total,
         paidAt: null,
       },
       coupon: coupon ? { code: coupon.code, type: coupon.type, discount: couponDiscount } : null,
       offer: offer,
       subtotal,
       discount,
-      shipping: input.shipping ?? 0,
+      shipping: shippingTotal,
       tax: 0,
-      total: Number((total + (input.shipping ?? 0)).toFixed(2)),
+      total,
       notes: input.notes,
     },
   });

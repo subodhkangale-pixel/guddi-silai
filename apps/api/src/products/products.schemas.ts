@@ -40,6 +40,10 @@ export const productSchema = z.object({
   images: z.array(z.string().url('Invalid image URL')).max(30).optional(),
   videos: z.array(z.string().url('Invalid video URL')).max(10).optional(),
   tags: z.array(z.string().trim().min(1)).max(30).optional(),
+  occasions: z
+    .array(z.string().trim().toLowerCase().min(1))
+    .max(12)
+    .optional(),
   seo: z
     .object({
       title: z.string().trim().max(200).optional(),
@@ -74,6 +78,7 @@ export const productQuerySchema = z.object({
   sizeId: z.string().optional(),
   fiberId: z.string().optional(),
   embroideryId: z.string().optional(),
+  occasion: z.string().trim().max(40).optional(),
   minPrice: z.coerce.number().nonnegative().optional(),
   maxPrice: z.coerce.number().nonnegative().optional(),
   availability: z.enum(AVAILABILITY_FILTERS).optional(),

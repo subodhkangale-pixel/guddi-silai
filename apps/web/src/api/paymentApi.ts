@@ -1,5 +1,5 @@
 import { apiRequest } from './client';
-import { ensureGuestToken } from './cartApi';
+import { resolveIdentityToken } from './authApi';
 
 export interface RazorpayOrder {
   keyId: string;
@@ -9,7 +9,7 @@ export interface RazorpayOrder {
 }
 
 export async function createPayment(orderNumber: string) {
-  const token = await ensureGuestToken();
+  const token = await resolveIdentityToken();
   return apiRequest<{ data: RazorpayOrder }>('/payments/create', {
     method: 'POST', token, body: { orderNumber },
   });
@@ -21,7 +21,7 @@ export async function verifyPayment(input: {
   razorpayPaymentId: string;
   razorpaySignature: string;
 }) {
-  const token = await ensureGuestToken();
+  const token = await resolveIdentityToken();
   return apiRequest<{ data: unknown }>('/payments/verify', {
     method: 'POST', token, body: input,
   });

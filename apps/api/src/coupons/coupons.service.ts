@@ -1,6 +1,7 @@
 import { CouponType } from '@prisma/client';
 
 import { prisma } from '../lib/prisma.js';
+import { fetchActiveOffers } from '../lib/activeOffers.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { ApplyCouponInput, couponSchema } from './coupons.schemas.js';
 
@@ -10,18 +11,11 @@ function cartSubtotal(items: { unitPrice: number; quantity: number }[]) {
 
 async function computeOfferDiscount(items: { unitPrice: number; quantity: number; productId: string }[]): Promise<number> {
   const subtotal = cartSubtotal(items);
-  const now = new Date();
   const productIds = items.map((item) => item.productId).filter(Boolean);
   if (productIds.length === 0) return 0;
 
   const products = await prisma.product.findMany({ where: { id: { in: productIds } }, select: { id: true, categoryId: true } });
-  const offers = await prisma.offer.findMany({
-    where: {
-      isActive: true,
-      OR: [{ startDate: null }, { startDate: { lte: now } }],
-      AND: [{ OR: [{ endDate: null }, { endDate: { gte: now } }] }],
-    },
-  });
+  const offers = await fetchActiveOffers();
 
   let discount = 0;
   for (const offer of offers) {
@@ -88,4 +82,16 @@ export async function adminList() {
 
 export async function adminCreate(input: ReturnType<typeof couponSchema.parse>) {
   return prisma.coupon.create({ data: input });
+}
+
+export async function adminUpdate(id: string, input: Partial<ReturnType<typeof couponSchema.parse>>) {
+  const coupon = await prisma.coupon.findUnique({ where: { id } });
+  if (!coupon) throw new AppError(404, 'Coupon not found');
+  return prisma.coupon.update({ where: { id }, data: input });
+}
+
+export async function adminRemove(id: string) {
+  const coupon = await prisma.coupon.findUnique({ where: { id } });
+  if (!coupon) throw new AppError(404, 'Coupon not found');
+  return prisma.coupon.delete({ where: { id } });
 }

@@ -1,4 +1,5 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 import { SORT_OPTIONS } from '@guddi-silai/shared';
 
@@ -23,6 +24,13 @@ const SORT_LABELS: Record<(typeof SORT_OPTIONS)[number], string> = {
   best_rated: 'Best Rated',
 };
 
+const OCCASIONS = [
+  { value: 'bridal', label: 'Bridal' },
+  { value: 'festive', label: 'Festive' },
+  { value: 'party', label: 'Party' },
+  { value: 'daily', label: 'Daily wear' },
+] as const;
+
 const AVAILABILITY_OPTIONS = [
   { value: 'in_stock', label: 'In Stock' },
   { value: 'out_of_stock', label: 'Out of Stock' },
@@ -30,12 +38,28 @@ const AVAILABILITY_OPTIONS = [
 ] as const;
 
 function Catalog() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState('');
   const deferredSearch = useDeferredValue(search.trim());
 
   const [filters, setFilters] = useState<ProductQuery>({ sort: 'newest' });
   const [selectedPrice, setSelectedPrice] = useState(0);
   const [sentinel, setSentinel] = useState<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const occasion = searchParams.get('occasion');
+    if (occasion && OCCASIONS.some((option) => option.value === occasion)) {
+      setFilters((f) => (f.occasion === occasion ? f : { ...f, occasion }));
+    }
+  }, [searchParams]);
+
+  function setOccasion(occasion?: string) {
+    setFilters((f) => ({ ...f, occasion: occasion || undefined }));
+    const next = new URLSearchParams(searchParams);
+    if (occasion) next.set('occasion', occasion);
+    else next.delete('occasion');
+    setSearchParams(next, { replace: true });
+  }
 
   const categories = useCategories();
   const colors = useColors();
@@ -129,6 +153,23 @@ function Catalog() {
                 </option>
               ))}
             </select>
+          </div>
+
+          <div>
+            <span className="text-sm font-medium text-gray-700">Occasion</span>
+            <div className="mt-1 space-y-1">
+              {OCCASIONS.map((option) => (
+                <label key={option.value} className="flex items-center gap-2 text-sm text-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={filters.occasion === option.value}
+                    onChange={() => setOccasion(filters.occasion === option.value ? undefined : option.value)}
+                    className="rounded border-gray-300 text-purple-600"
+                  />
+                  {option.label}
+                </label>
+              ))}
+            </div>
           </div>
 
           <div>

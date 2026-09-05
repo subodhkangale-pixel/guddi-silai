@@ -1,5 +1,5 @@
 import { apiRequest } from './client';
-import { ensureGuestToken } from './cartApi';
+import { resolveIdentityToken } from './authApi';
 
 export interface CreateOrderInput {
   name: string;
@@ -12,6 +12,15 @@ export interface CreateOrderInput {
   notes?: string;
   shipping?: number;
   paymentMethod: 'COD' | 'UPI' | 'NET_BANKING' | 'RAZORPAY';
+  addonIds?: string[];
+}
+
+export interface StyleOptions {
+  neckline?: string;
+  sleeveStyle?: string;
+  backDesign?: string;
+  embroideryPlacement?: string;
+  fitting?: string;
 }
 
 export interface MeasurementSnapshotValue {
@@ -43,6 +52,7 @@ export interface OrderItem {
   discount?: number | null;
   measurementSnapshot?: MeasurementSnapshot | null;
   customizationNotes?: string | null;
+  styleOptions?: StyleOptions | null;
   total: number;
 }
 
@@ -64,6 +74,13 @@ export interface OrderPayment {
   paidAt?: string | null;
 }
 
+export interface OrderAddon {
+  name: string;
+  description?: string | null;
+  price: number;
+  quantity: number;
+}
+
 export interface Order {
   id: string;
   orderNumber: string;
@@ -71,6 +88,7 @@ export interface Order {
   status: string;
   customer: OrderCustomer;
   items: OrderItem[];
+  addons?: OrderAddon[] | null;
   payment?: OrderPayment | null;
   coupon?: { code: string; type: string; discount: number } | null;
   offer?: { name: string; type: string; discount: number } | null;
@@ -85,16 +103,16 @@ export interface Order {
 }
 
 export async function createOrder(input: CreateOrderInput) {
-  const token = await ensureGuestToken();
+  const token = await resolveIdentityToken();
   return apiRequest<{ data: Order }>('/orders', { method: 'POST', token, body: input });
 }
 
 export async function getOrders() {
-  const token = await ensureGuestToken();
+  const token = await resolveIdentityToken();
   return apiRequest<{ data: Order[] }>('/orders', { token });
 }
 
 export async function getOrderByNumber(orderNumber: string) {
-  const token = await ensureGuestToken();
+  const token = await resolveIdentityToken();
   return apiRequest<{ data: Order }>(`/orders/${orderNumber}`, { token });
 }

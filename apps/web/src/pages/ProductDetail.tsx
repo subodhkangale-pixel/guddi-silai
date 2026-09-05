@@ -1,11 +1,21 @@
 import { useParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 
 import Spinner from '../components/Spinner';
+import ReviewsSection from '../components/ReviewsSection';
 import { useAddCartItem, useFiberAvailability, useProduct } from '../api/hooks';
 import { formatPrice } from '../lib/format';
 import { useWishlist } from '../hooks/useWishlist';
 import { trackEvent } from '../api/analyticsApi';
+
+const STYLE_OPTION_PRESETS: { key: 'neckline' | 'sleeveStyle' | 'backDesign' | 'embroideryPlacement' | 'fitting'; label: string; options: string[] }[] = [
+  { key: 'neckline', label: 'Neckline', options: ['Round neck', 'V-neck', 'Sweetheart', 'Boat neck', 'Square', 'High neck', 'Collared'] },
+  { key: 'sleeveStyle', label: 'Sleeve style', options: ['Sleeveless', 'Cap sleeve', 'Short sleeve', 'Elbow sleeve', 'Three-quarter', 'Full sleeve', 'Cold shoulder', 'Bishop sleeve'] },
+  { key: 'backDesign', label: 'Back design', options: ['Plain', 'Deep V back', 'Keyhole', 'Knot back', 'Back hooks', 'Laced back', 'Belted back'] },
+  { key: 'embroideryPlacement', label: 'Embroidery placement', options: ['Front', 'Back', 'Sleeves', 'Borders', 'All over'] },
+  { key: 'fitting', label: 'Fitting', options: ['Regular fit', 'Body fit', 'Loose fit'] },
+];
 
 function AvailabilityBadge({
   availability,
@@ -44,6 +54,7 @@ function ProductDetailPage() {
   const [selectedFiberId, setSelectedFiberId] = useState<string>();
   const [selectedColorId, setSelectedColorId] = useState<string>();
   const [selectedEmbroideryId, setSelectedEmbroideryId] = useState<string>();
+  const [styleOptions, setStyleOptions] = useState<{ neckline?: string; sleeveStyle?: string; backDesign?: string; embroideryPlacement?: string; fitting?: string }>({});
   const productIdForAvailability = data?.data?.type === 'CUSTOMIZE' ? data.data.id : undefined;
   const fiberAvailabilityQuery = useFiberAvailability(productIdForAvailability);
 
@@ -111,6 +122,7 @@ function ProductDetailPage() {
       fiberId: product.type === 'CUSTOMIZE' ? selectedFiber?.id : undefined,
       colorId: product.type === 'CUSTOMIZE' ? selectedColorId : undefined,
       embroideryId: product.type === 'CUSTOMIZE' ? selectedEmbroidery?.id : undefined,
+      styleOptions: Object.keys(styleOptions).length > 0 ? styleOptions : undefined,
     });
   }
 
@@ -253,8 +265,11 @@ function ProductDetailPage() {
           )}
 
           {product.type === 'READY_MADE' && product.variants.length > 0 && (
-            <label className="mt-6 block text-sm font-medium text-gray-700">
-              Choose color and size
+            <div className="mt-6">
+              <div className="flex items-center justify-between">
+                <label className="block text-sm font-medium text-gray-700">Choose color and size</label>
+                <Link to="/size-guide" className="text-xs font-semibold text-pink-600">Size guide →</Link>
+              </div>
               <select
                 value={selectedVariant?.id ?? ''}
                 onChange={(event) => setSelectedVariantId(event.target.value)}
@@ -266,7 +281,7 @@ function ProductDetailPage() {
                   </option>
                 ))}
               </select>
-            </label>
+            </div>
           )}
 
           {product.type === 'CUSTOMIZE' && (
@@ -312,6 +327,26 @@ function ProductDetailPage() {
               {selectedFiber && <div className="flex justify-between"><span>Fabric ({selectedFiber.name})</span><span>+{formatPrice(selectedFiber.price)}</span></div>}
               {selectedEmbroidery && <div className="flex justify-between"><span>Embroidery ({selectedEmbroidery.name})</span><span>+{formatPrice(selectedEmbroidery.surcharge ?? 0)}</span></div>}
               <div className="mt-2 flex justify-between border-t border-gray-200 pt-2 font-bold text-gray-900"><span>Unit price</span><span>{formatPrice(customUnitPrice)}</span></div>
+            </div>
+            <div className="space-y-3">
+              {STYLE_OPTION_PRESETS.map((preset) => (
+                <label key={preset.key} className="block text-sm font-medium text-gray-700">
+                  {preset.label}
+                  <select
+                    value={styleOptions[preset.key] ?? ''}
+                    onChange={(event) => setStyleOptions((current) => {
+                      const next = { ...current };
+                      if (event.target.value) next[preset.key] = event.target.value;
+                      else delete next[preset.key];
+                      return next;
+                    })}
+                    className="mt-2 block w-full rounded-md border border-gray-300 bg-white px-3 py-2"
+                  >
+                    <option value="">Choose</option>
+                    {preset.options.map((option) => <option key={option} value={option}>{option}</option>)}
+                  </select>
+                </label>
+              ))}
             </div>
             {fabricUnavailable && <p className="text-xs font-medium text-red-700">This fabric color is currently out of stock. Pick another combination.</p>}
             </div>
@@ -367,6 +402,8 @@ function ProductDetailPage() {
           {addToCart.isError && <p className="mt-3 text-sm text-red-700">Could not add this item. Please check the selected option.</p>}
         </div>
       </div>
+
+      <ReviewsSection productId={product.id} productType={product.type} />
     </div>
   );
 }

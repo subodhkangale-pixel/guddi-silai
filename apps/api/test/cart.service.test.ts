@@ -3,12 +3,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('../src/lib/prisma.js', () => ({
   prisma: {
     cart: { findUnique: vi.fn(), create: vi.fn(), update: vi.fn() },
-    product: { findUnique: vi.fn() },
+    product: { findUnique: vi.fn(), findMany: vi.fn() },
     productVariant: { findUnique: vi.fn() },
     fiberInventory: { findUnique: vi.fn() },
     color: { findUnique: vi.fn() },
     size: { findUnique: vi.fn() },
     measurementField: { findMany: vi.fn() },
+    offer: { findMany: vi.fn() },
   },
 }));
 
@@ -45,6 +46,8 @@ beforeEach(() => {
   prisma.size.findUnique.mockResolvedValue({ name: 'M' });
   prisma.fiberInventory.findUnique.mockResolvedValue({ id: 'fi-1', stock: 5 });
   prisma.measurementField.findMany.mockResolvedValue([{ id: 'mf-bust', key: 'bust', label: 'Bust', isRequired: true }]);
+  prisma.offer.findMany.mockResolvedValue([]);
+  prisma.product.findMany.mockResolvedValue([]);
   prisma.cart.update.mockImplementation(async ({ data }) => ({ ...cart, ...data }));
 });
 

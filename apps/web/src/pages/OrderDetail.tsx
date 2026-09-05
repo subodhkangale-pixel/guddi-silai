@@ -81,6 +81,11 @@ function OrderDetailPage() {
                     {item.color ? ` · ${item.color}` : ''}
                     {item.size ? ` · Size ${item.size}` : ''}
                   </p>
+                  {item.styleOptions && (() => {
+                    const entries = Object.entries(item.styleOptions).filter(([, value]) => Boolean(value));
+                    if (entries.length === 0) return null;
+                    return <p className="mt-1 text-sm text-gray-500">{entries.map(([key, value]) => `${key.replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase())}: ${value}`).join(' · ')}</p>;
+                  })()}
                 </div>
                 <div className="text-right text-sm">
                   <p>{formatPrice(item.unitPrice)} × {item.quantity}</p>
@@ -111,6 +116,7 @@ function OrderDetailPage() {
           <div className="flex justify-between"><span>Subtotal</span><span>{formatPrice(order.subtotal)}</span></div>
           {offerDiscount > 0 && <div className="flex justify-between text-green-700"><span>Offer discount ({order.offer?.name})</span><span>−{formatPrice(offerDiscount)}</span></div>}
           {couponDiscount > 0 && <div className="flex justify-between text-green-700"><span>Coupon ({order.coupon?.code})</span><span>−{formatPrice(couponDiscount)}</span></div>}
+          {order.addons && order.addons.length > 0 && <div className="flex justify-between"><span>Add-ons ({order.addons.length})</span><span>+{formatPrice(order.addons.reduce((sum, addon) => sum + addon.price * addon.quantity, 0))}</span></div>}
           <div className="flex justify-between"><span>Shipping</span><span>{order.shipping > 0 ? formatPrice(order.shipping) : 'Free'}</span></div>
           {totalDiscount > 0 && <div className="flex justify-between text-green-700"><span>Total discount</span><span>−{formatPrice(totalDiscount)}</span></div>}
         </div>
@@ -118,6 +124,20 @@ function OrderDetailPage() {
           <span>Total</span><span>{formatPrice(order.total)}</span>
         </div>
       </section>
+
+      {order.addons && order.addons.length > 0 && (
+        <section className="mt-6 rounded-lg border border-gray-200 p-5">
+          <h2 className="text-sm font-bold uppercase tracking-wide text-gray-500">Add-ons</h2>
+          <div className="mt-3 space-y-2">
+            {order.addons.map((addon, index) => (
+              <div key={index} className="flex items-baseline justify-between gap-3 text-sm">
+                <div><span className="font-medium text-gray-900">{addon.name}</span>{addon.description && <span className="block text-xs text-gray-500">{addon.description}</span>}</div>
+                <span className="whitespace-nowrap text-gray-700">{formatPrice(addon.price)} {addon.quantity > 1 ? `× ${addon.quantity}` : ''}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

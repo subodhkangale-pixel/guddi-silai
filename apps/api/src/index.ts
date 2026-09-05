@@ -17,6 +17,7 @@ import reviewsRouter from './reviews/reviews.routes.js';
 import couponsRouter from './coupons/coupons.routes.js';
 import notificationsRouter from './notifications/notifications.routes.js';
 import offersRouter from './offers/offers.routes.js';
+import addonsRouter from './addons/addons.routes.js';
 import measurementsRouter from './measurements/measurement.routes.js';
 import deliveryRouter from './delivery/delivery.routes.js';
 import { errorHandler } from './middleware/errorHandler.js';
@@ -51,6 +52,7 @@ app.use('/api/v1', reviewsRouter);
 app.use('/api/v1/coupons', couponsRouter);
 app.use('/api/v1/notifications', notificationsRouter);
 app.use('/api/v1/offers', offersRouter);
+app.use('/api/v1/addons', addonsRouter);
 app.use('/api/v1/measurements', measurementsRouter);
 app.use('/api/v1/delivery', deliveryRouter);
 
