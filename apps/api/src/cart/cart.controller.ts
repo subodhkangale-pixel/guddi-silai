@@ -34,6 +34,11 @@ export const updateMeasurements = asyncHandler(async (req: Request, res: Respons
   res.json({ data: cart });
 });
 
+export const updateStyleOptions = asyncHandler(async (req: Request, res: Response) => {
+  const cart = await cartService.updateStyleOptions(owner(req).id, Number(req.params.index), req.body);
+  res.json({ data: cart });
+});
+
 export const clearCart = asyncHandler(async (req: Request, res: Response) => {
   const cart = await cartService.clearCart(owner(req).id);
   res.json({ data: cart });

@@ -1,9 +1,10 @@
 import { prisma } from '../lib/prisma.js';
+import { fetchActiveOffers } from '../lib/activeOffers.js';
 import { AppError } from '../middleware/errorHandler.js';
 
 export async function listActive() {
-  const now = new Date();
-  return prisma.offer.findMany({ where: { isActive: true, OR: [{ startDate: null }, { startDate: { lte: now } }], AND: [{ OR: [{ endDate: null }, { endDate: { gte: now } }] }] }, orderBy: { createdAt: 'desc' } });
+  const offers = await fetchActiveOffers();
+  return offers.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 }
 
 export async function adminList() {

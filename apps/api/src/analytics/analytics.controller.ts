@@ -13,3 +13,9 @@ export const summary = asyncHandler(async (req: Request, res: Response) => {
   const to = req.query.to instanceof Date ? req.query.to : undefined;
   res.json({ data: await analyticsService.summary(from, to) });
 });
+
+export const dashboard = asyncHandler(async (req: Request, res: Response) => {
+  const from = req.query.from instanceof Date ? req.query.from : undefined;
+  const to = req.query.to instanceof Date ? req.query.to : undefined;
+  res.json({ data: await analyticsService.dashboard(from, to) });
+});

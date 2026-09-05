@@ -9,4 +9,6 @@ const router: Router = Router();
 router.use(requireAdmin, authorize('coupon:write'));
 router.get('/', couponsController.adminList);
 router.post('/', validateBody(couponSchema), couponsController.adminCreate);
+router.patch('/:id', validateBody(couponSchema.partial()), couponsController.adminUpdate);
+router.delete('/:id', couponsController.adminRemove);
 export default router;

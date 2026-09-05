@@ -11,6 +11,7 @@ export const createOrderSchema = z.object({
   notes: z.string().max(500).optional(),
   shipping: z.number().nonnegative().max(1000).optional(),
   paymentMethod: z.enum(['COD', 'UPI', 'NET_BANKING', 'RAZORPAY']).default('COD'),
+  addonIds: z.array(z.string().min(1)).default([]),
 });
 
 export type CreateOrderInput = z.infer<typeof createOrderSchema>;

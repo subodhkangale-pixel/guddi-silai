@@ -173,6 +173,7 @@ const PRODUCT_SEEDS = [
     fibers: ['Raw Silk'],
     embroideries: ['Hand Embroidery'],
     tags: ['bridal', 'silk', 'handloom'],
+    occasions: ['bridal', 'festive'],
     stock: 8,
   },
   {
@@ -189,6 +190,7 @@ const PRODUCT_SEEDS = [
     fibers: ['Cotton'],
     embroideries: ['Plain'],
     tags: ['cotton', 'everyday', 'sleeveless'],
+    occasions: ['daily'],
     stock: 20,
   },
   {
@@ -206,6 +208,7 @@ const PRODUCT_SEEDS = [
     fibers: ['Velvet'],
     embroideries: ['Zardosi'],
     tags: ['festive', 'velvet', 'zardosi'],
+    occasions: ['festive', 'party', 'bridal'],
     stock: 12,
   },
   {
@@ -223,6 +226,7 @@ const PRODUCT_SEEDS = [
     fibers: ['Georgette', 'Satin'],
     embroideries: ['Stone Work', 'Bead Work'],
     tags: ['custom', 'georgette', 'measurements'],
+    occasions: ['daily', 'festive'],
     stock: 0,
     expectedAvailability: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000),
   },
@@ -240,6 +244,7 @@ const PRODUCT_SEEDS = [
     fibers: ['Silk'],
     embroideries: ['Bead Work'],
     tags: ['party', 'silk', 'designer'],
+    occasions: ['party', 'festive'],
     stock: 5,
   },
   {
@@ -256,6 +261,7 @@ const PRODUCT_SEEDS = [
     fibers: ['Silk'],
     embroideries: ['Mirror Work'],
     tags: ['showcase', 'mirror-work', 'designer'],
+    occasions: ['festive', 'bridal', 'party'],
     stock: 0,
   },
 ] as const;
@@ -423,6 +429,7 @@ async function seedProducts(
         images: [`https://picsum.photos/seed/${seed.slug}/600/750`],
         videos: [],
         tags: seed.tags,
+        occasions: seed.occasions,
         expectedAvailability: seed.expectedAvailability ?? null,
         isActive: true,
       },
@@ -443,6 +450,7 @@ async function seedProducts(
         images: [`https://picsum.photos/seed/${seed.slug}/600/750`],
         videos: [],
         tags: seed.tags,
+        occasions: seed.occasions,
         expectedAvailability: seed.expectedAvailability ?? null,
       },
     });
@@ -466,6 +474,23 @@ async function seedProducts(
           price: seed.basePrice,
           stock: seed.stock,
         },
+      });
+    }
+  }
+}
+
+async function seedFiberInventory(ids: {
+  fiberId: Record<string, string>;
+  colorId: Record<string, string>;
+}): Promise<void> {
+  for (const fiberName of Object.keys(ids.fiberId)) {
+    const fiberId = ids.fiberId[fiberName];
+    for (const colorName of Object.keys(ids.colorId)) {
+      const colorId = ids.colorId[colorName];
+      await prisma.fiberInventory.upsert({
+        where: { fiberId_colorId: { fiberId, colorId } },
+        update: { stock: Math.max(50, 0) },
+        create: { fiberId, colorId, stock: 50 },
       });
     }
   }
@@ -495,13 +520,33 @@ async function seedMeasurementFields(): Promise<void> {
   }
 }
 
+async function seedAddons(): Promise<void> {
+  const addons = [
+    { name: 'Fall & Pico', description: 'Saree edge finishing with colorful pico stitching to keep your saree draping beautifully.', price: 250, displayOrder: 1 },
+    { name: 'Blouse stitching (your fabric)', description: 'We stitch a blouse from your own fabric — just share the fabric with your order.', price: 800, displayOrder: 2 },
+    { name: 'Petticoat', description: 'Matching or same-fabric petticoat to complete your saree look.', price: 599, displayOrder: 3 },
+    { name: 'Tassels', description: 'Decorative tassels added to your blouse or saree edge.', price: 199, displayOrder: 4 },
+    { name: 'Matching blouse piece', description: 'A length of matching fabric reserved for your blouse.', price: 899, displayOrder: 5 },
+  ];
+  for (const addon of addons) {
+    const existing = await prisma.addon.findFirst({ where: { name: addon.name } });
+    if (existing) {
+      await prisma.addon.update({ where: { id: existing.id }, data: { ...addon, isActive: true } });
+    } else {
+      await prisma.addon.create({ data: { ...addon, isActive: true } });
+    }
+  }
+}
+
 async function main(): Promise<void> {
   const keyToId = await seedPermissions();
   await seedRoles(keyToId);
   await seedSuperAdmin();
   const ids = await seedCatalogue();
   await seedProducts(ids);
+  await seedFiberInventory(ids);
   await seedMeasurementFields();
+  await seedAddons();
 }
 
 main()

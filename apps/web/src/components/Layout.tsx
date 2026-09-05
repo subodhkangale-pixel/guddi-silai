@@ -1,6 +1,15 @@
-import { Link, Outlet } from 'react-router-dom';
+import { Link, Outlet, useNavigate } from 'react-router-dom';
+
+import { useAuth } from '../auth/AuthContext';
 
 function Layout() {
+  const { user, status, logout } = useAuth();
+  const navigate = useNavigate();
+
+  function handleSignOut() {
+    void logout().then(() => navigate('/'));
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       <header className="border-b bg-white sticky top-0 z-50">
@@ -23,18 +32,19 @@ function Layout() {
                 Products
               </Link>
               <Link to="/notifications" className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Notifications</Link>
-              <Link
-                to="/products"
-                className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-              >
-                Customize
-              </Link>
-              <Link
-                to="/products"
-                className="bg-gray-900 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-700"
-              >
-                Get Started
-              </Link>
+              {status === 'authenticated' && user ? (
+                <span className="flex items-center gap-3">
+                  <Link to="/orders" className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">My orders</Link>
+                  <Link to="/" onClick={handleSignOut} className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Sign out ({user.name})</Link>
+                </span>
+              ) : (
+                <Link
+                  to="/login"
+                  className="bg-gray-900 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-700"
+                >
+                  Sign in
+                </Link>
+              )}
             </nav>
           </div>
         </div>
@@ -44,7 +54,13 @@ function Layout() {
       </main>
       <footer className="bg-gray-50 border-t">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <p className="text-center text-gray-500 text-sm">
+          <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm">
+            <Link to="/products" className="text-gray-600 hover:text-gray-900 font-medium">Collection</Link>
+            <Link to="/size-guide" className="text-gray-600 hover:text-gray-900 font-medium">Size guide</Link>
+            <Link to="/notifications" className="text-gray-600 hover:text-gray-900 font-medium">Notifications</Link>
+            <Link to="/admin/login" className="text-gray-600 hover:text-gray-900 font-medium">Admin</Link>
+          </nav>
+          <p className="mt-4 text-center text-gray-500 text-sm">
             © 2024 Guddi Silai. All rights reserved.
           </p>
         </div>

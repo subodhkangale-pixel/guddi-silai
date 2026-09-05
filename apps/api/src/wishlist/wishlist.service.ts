@@ -14,7 +14,7 @@ export async function addItem(userId: string, input: WishlistItemInput) {
   const wishlist = await prisma.wishlist.findUnique({ where: { userId } });
   const items = [...(wishlist?.items ?? [])];
   if (!items.some((item) => item.productId === product.id)) {
-    items.push({ productId: product.id, productName: product.name, productDesignId: product.designId, productImage: product.images[0] ?? null, productType: product.type as ProductType, basePrice: product.basePrice, isActive: true });
+    items.push({ productId: product.id, productName: product.name, productDesignId: product.designId, productImage: product.images[0] ?? null, productType: product.type as ProductType, slug: product.slug, basePrice: product.basePrice, isActive: true });
   }
   if (wishlist) return prisma.wishlist.update({ where: { id: wishlist.id }, data: { items } });
   return prisma.wishlist.create({ data: { userId, items } });

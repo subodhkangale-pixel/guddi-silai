@@ -51,6 +51,8 @@ export function decodeCursor(cursor: string): KeySetCursor {
 
 type OrderClause = Prisma.ProductOrderByWithRelationInput;
 
+const SCORE_SORTS = new Set<SortOption>(['most_popular', 'most_liked', 'most_viewed', 'best_rated']);
+
 function orderFor(sort: SortOption): OrderClause[] {
   switch (sort) {
     case 'price_low_to_high':
@@ -61,12 +63,96 @@ function orderFor(sort: SortOption): OrderClause[] {
     case 'most_liked':
     case 'most_viewed':
     case 'best_rated':
-      // Fall back to newest until analytics/review aggregates land (Phases 11/16).
       return [{ createdAt: 'desc' }, { id: 'desc' }];
     case 'newest':
     default:
       return [{ createdAt: 'desc' }, { id: 'desc' }];
   }
+}
+
+type AnalyticsEventType = 'PRODUCT_VIEW' | 'WISHLIST_ADD' | 'CART_ADD' | 'ORDER_PLACED';
+
+async function scoreProducts(productIds: string[], sort: SortOption): Promise<Map<string, number>> {
+  const map = new Map<string, number>();
+  if (productIds.length === 0) return map;
+
+  const groupByCount = async (type: AnalyticsEventType): Promise<Map<string, number>> => {
+    const events = await prisma.analyticsEvent.groupBy({
+      by: ['productId'],
+      where: { type, productId: { in: productIds } },
+      _count: { _all: true },
+    });
+    return new Map(events.map((event) => [event.productId!, event._count._all]));
+  };
+
+  switch (sort) {
+    case 'most_viewed': {
+      const counts = await groupByCount('PRODUCT_VIEW');
+      for (const [id, value] of counts) map.set(id, value);
+      break;
+    }
+    case 'most_liked': {
+      const counts = await groupByCount('WISHLIST_ADD');
+      for (const [id, value] of counts) map.set(id, value);
+      break;
+    }
+    case 'most_popular': {
+      const [views, likes, carts, orders] = await Promise.all([
+        groupByCount('PRODUCT_VIEW'),
+        groupByCount('WISHLIST_ADD'),
+        groupByCount('CART_ADD'),
+        groupByCount('ORDER_PLACED'),
+      ]);
+      const all = new Set([...views.keys(), ...likes.keys(), ...carts.keys(), ...orders.keys()]);
+      for (const id of all) {
+        map.set(
+          id,
+          (views.get(id) ?? 0) +
+            (likes.get(id) ?? 0) * 2 +
+            (carts.get(id) ?? 0) * 3 +
+            (orders.get(id) ?? 0) * 10
+        );
+      }
+      break;
+    }
+    case 'best_rated': {
+      const reviews = await prisma.review.groupBy({
+        by: ['productId'],
+        where: { productId: { in: productIds }, status: 'approved' },
+        _avg: { rating: true },
+      });
+      for (const review of reviews) map.set(review.productId, review._avg.rating ?? 0);
+      break;
+    }
+    default:
+      break;
+  }
+  return map;
+}
+
+async function listProductsByScore(where: ProductWhere, params: ProductQueryParams) {
+  const limit = params.limit;
+  const offset = params.cursor ? Number(decodeCursor(params.cursor).sortValue) || 0 : 0;
+
+  const matches = await prisma.product.findMany({ where, select: { id: true }, orderBy: orderFor('newest') });
+  const scores = await scoreProducts(matches.map((product) => product.id), params.sort);
+  const sorted = matches
+    .map((product) => product.id)
+    .sort((a, b) => (scores.get(b) ?? 0) - (scores.get(a) ?? 0) || (a > b ? 1 : -1));
+
+  const hasMore = offset + limit < sorted.length;
+  const pageIds = sorted.slice(offset, offset + limit);
+
+  const products = await prisma.product.findMany({
+    where: { id: { in: pageIds }, isActive: true },
+    orderBy: orderFor('newest'),
+  });
+  const byId = new Map(products.map((product) => [product.id, product]));
+  const page = pageIds.map((id) => byId.get(id)).filter((product): product is NonNullable<typeof product> => Boolean(product));
+  const data = await summarizeProducts(page);
+
+  const nextCursor = hasMore && page.length > 0 ? encodeCursor({ sortValue: String(offset + limit), id: page[page.length - 1].id }) : null;
+  return { data, nextCursor, hasMore };
 }
 
 function cursorConditionFor(
@@ -227,6 +313,7 @@ export async function buildProductWhere(
   if (params.fiberId) where.fiberOptions = { some: { id: params.fiberId } };
   if (params.embroideryId)
     where.embroideryOptions = { some: { id: params.embroideryId } };
+  if (params.occasion) where.occasions = { has: params.occasion.toLowerCase() };
   if (params.minPrice !== undefined || params.maxPrice !== undefined) {
     const price: NonNullable<ProductWhere['basePrice']> = {};
     if (params.minPrice !== undefined) price.gte = params.minPrice;
@@ -270,6 +357,7 @@ interface ProductWithSummary {
   discountPercent: number | null;
   images: string[];
   tags: string[];
+  occasions: string[];
   expectedAvailability: Date | null;
   totalStock: number;
   availability: 'in_stock' | 'out_of_stock' | 'upcoming' | 'showcase';
@@ -299,6 +387,7 @@ async function summarizeProducts(
     discountPercent: number | null;
     images: string[];
     tags: string[];
+    occasions: string[];
     expectedAvailability: Date | null;
     isActive: boolean;
   }>
@@ -334,6 +423,7 @@ async function summarizeProducts(
       discountPercent: product.discountPercent,
       images: product.images,
       tags: product.tags,
+      occasions: product.occasions ?? [],
       expectedAvailability: product.expectedAvailability,
       totalStock,
       availability: computeAvailability(product, totalStock),
@@ -344,6 +434,10 @@ async function summarizeProducts(
 export async function listProducts(params: ProductQueryParams) {
   const { where, orderBy } = await buildProductWhere(params);
   const limit = params.limit;
+
+  if (SCORE_SORTS.has(params.sort)) {
+    return listProductsByScore(where, params);
+  }
 
   if (params.cursor) {
     const cursor = decodeCursor(params.cursor);
@@ -520,6 +614,7 @@ export async function createProduct(input: ProductInput) {
     images: input.images ?? [],
     videos: input.videos ?? [],
     tags: input.tags ?? [],
+    occasions: input.occasions ?? [],
     seo: input.seo,
     expectedAvailability: input.expectedAvailability,
   };
@@ -557,6 +652,7 @@ export async function updateProduct(id: string, input: Partial<ProductInput>) {
   if (input.images !== undefined) data.images = input.images;
   if (input.videos !== undefined) data.videos = input.videos;
   if (input.tags !== undefined) data.tags = input.tags;
+  if (input.occasions !== undefined) data.occasions = input.occasions;
   if (input.seo !== undefined) data.seo = input.seo;
   if (input.expectedAvailability !== undefined)
     data.expectedAvailability = input.expectedAvailability;

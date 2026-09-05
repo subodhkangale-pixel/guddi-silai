@@ -87,7 +87,7 @@ function CartPage() {
   );
 }
 
-function CartItemRow({ item, index, itemType }: { item: { productType: 'READY_MADE' | 'CUSTOMIZE'; productId: string; productName: string; productImage: string | null; fiberName: string | null; color: string | null; size: string | null; unitPrice: number; quantity: number; measurementStatus: string | null }; index: number; itemType: 'ready' | 'custom' }) {
+function CartItemRow({ item, index, itemType }: { item: { productType: 'READY_MADE' | 'CUSTOMIZE'; productId: string; productName: string; productImage: string | null; fiberName: string | null; color: string | null; size: string | null; unitPrice: number; quantity: number; measurementStatus: string | null; styleOptions?: { neckline?: string; sleeveStyle?: string; backDesign?: string; embroideryPlacement?: string; fitting?: string } | null }; index: number; itemType: 'ready' | 'custom' }) {
   const update = useUpdateCartItem();
   const updateMeasurements = useUpdateMeasurements();
   return (
@@ -100,6 +100,11 @@ function CartItemRow({ item, index, itemType }: { item: { productType: 'READY_MA
         <p className="mt-1 text-sm text-gray-600">
           {itemType === 'custom' ? `Custom · ${item.fiberName ?? 'Fabric pending'}` : `${item.color ?? 'Color'} · ${item.size ?? 'Size'}`}
         </p>
+        {item.styleOptions && (() => {
+          const entries = Object.entries(item.styleOptions).filter(([, value]) => Boolean(value));
+          if (entries.length === 0) return null;
+          return <p className="mt-1 text-xs text-gray-500">{entries.map(([key, value]) => `${key.replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase())}: ${value}`).join(' · ')}</p>;
+        })()}
         <p className="mt-2 font-semibold text-gray-900">{formatPrice(item.unitPrice)}</p>
         <div className="mt-2 flex items-center gap-2">
           <label htmlFor={`quantity-${index}`} className="text-sm text-gray-600">Quantity</label>

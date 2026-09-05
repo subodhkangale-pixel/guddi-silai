@@ -1,8 +1,9 @@
 import { CartItem, ProductType } from '@prisma/client';
 
 import { prisma } from '../lib/prisma.js';
+import { fetchActiveOffers } from '../lib/activeOffers.js';
 import { AppError } from '../middleware/errorHandler.js';
-import { CartItemInput, UpdateCartItemInput } from './cart.schemas.js';
+import { CartItemInput, UpdateCartItemInput, UpdateStyleOptionsInput } from './cart.schemas.js';
 import { MeasurementInput } from './measurement.schemas.js';
 
 function sectionTotals(items: CartItem[]) {
@@ -29,6 +30,46 @@ function totals(items: CartItem[]) {
   };
 }
 
+function cartSubtotal(items: { unitPrice: number; quantity: number }[]) {
+  return Number(items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0).toFixed(2));
+}
+
+function activeOffers() {
+  return fetchActiveOffers();
+}
+
+async function productCategories(productIds: string[]) {
+  const products = await prisma.product.findMany({
+    where: { id: { in: productIds } },
+    select: { id: true, categoryId: true },
+  });
+  return products.map((product) => product.categoryId);
+}
+
+export async function computeOfferDiscount(items: {
+  unitPrice: number;
+  quantity: number;
+  productId: string;
+}[]): Promise<number> {
+  const subtotal = cartSubtotal(items);
+  const productIds = items.map((item) => item.productId).filter(Boolean);
+  if (productIds.length === 0) return 0;
+
+  const [categories, offers] = await Promise.all([productCategories(productIds), activeOffers()]);
+
+  let discount = 0;
+  for (const offer of offers) {
+    let applies = false;
+    if (offer.applicableProductIds.length > 0 && productIds.some((id) => offer.applicableProductIds.includes(id))) applies = true;
+    if (offer.applicableCategoryIds.length > 0 && categories.some((categoryId) => offer.applicableCategoryIds.includes(categoryId))) applies = true;
+    if (offer.applicableProductIds.length === 0 && offer.applicableCategoryIds.length === 0) applies = true;
+    if (!applies) continue;
+    const value = offer.type === 'PERCENT' ? subtotal * offer.value / 100 : offer.value;
+    discount += value;
+  }
+  return Number(Math.min(discount, subtotal).toFixed(2));
+}
+
 export function buildSections(items: CartItem[]) {
   const sections = sectionTotals(items);
   return {
@@ -51,6 +92,24 @@ async function getOrCreateCart(ownerKey: string, userId?: string) {
 export async function getCart(ownerKey: string) {
   const cart = await getOrCreateCart(ownerKey, ownerKey);
   return { ...cart, sections: buildSections(cart.items) };
+}
+
+async function persistWithOffers(cartId: string, items: CartItem[], extra: Record<string, unknown> = {}) {
+  const summary = totals(items);
+  const offerDiscount = await computeOfferDiscount(items);
+  const discount = offerDiscount;
+  return prisma.cart.update({
+    where: { id: cartId },
+    data: {
+      items,
+      ...summary,
+      ...extra,
+      couponCode: null,
+      discount,
+      offerDiscount,
+      totalPrice: Number((summary.totalPrice - discount).toFixed(2)),
+    },
+  });
 }
 
 export async function addItem(ownerKey: string, userId: string | undefined, input: CartItemInput) {
@@ -152,14 +211,11 @@ export async function addItem(ownerKey: string, userId: string | undefined, inpu
       quantity: input.quantity,
       measurementStatus: input.productType === 'CUSTOMIZE' ? 'PENDING' : null,
       measurementValues: null,
+      styleOptions: input.styleOptions ?? null,
     });
   }
 
-  const summary = totals(items);
-  return prisma.cart.update({
-    where: { id: cart.id },
-    data: { items, ...summary, couponCode: null, discount: 0, offerDiscount: 0, userId: userId ?? cart.userId },
-  });
+  return persistWithOffers(cart.id, items, { userId: userId ?? cart.userId });
 }
 
 export async function updateItem(ownerKey: string, index: number, input: UpdateCartItemInput) {
@@ -168,7 +224,19 @@ export async function updateItem(ownerKey: string, index: number, input: UpdateC
   const items = [...cart.items];
   if (input.quantity === 0) items.splice(index, 1);
   else items[index] = { ...items[index], quantity: input.quantity };
-  return prisma.cart.update({ where: { id: cart.id }, data: { items, ...totals(items), couponCode: null, discount: 0, offerDiscount: 0 } });
+  return persistWithOffers(cart.id, items);
+}
+
+export async function updateStyleOptions(
+  ownerKey: string,
+  index: number,
+  input: UpdateStyleOptionsInput
+) {
+  const cart = await prisma.cart.findUnique({ where: { ownerKey } });
+  if (!cart || !cart.items[index]) throw new AppError(404, 'Cart item not found');
+  const items = [...cart.items];
+  items[index] = { ...items[index], styleOptions: input.styleOptions };
+  return persistWithOffers(cart.id, items);
 }
 
 export async function removeItem(ownerKey: string, index: number) {
@@ -209,11 +277,11 @@ export async function updateMeasurements(ownerKey: string, index: number, input:
     measurementStatus: 'COMPLETE',
     measurementValues: snapshot,
   };
-  return prisma.cart.update({ where: { id: cart.id }, data: { items } });
+  return persistWithOffers(cart.id, items);
 }
 
 export async function clearCart(ownerKey: string) {
   const cart = await prisma.cart.findUnique({ where: { ownerKey } });
   if (!cart) return getCart(ownerKey);
-  return prisma.cart.update({ where: { id: cart.id }, data: { items: [], totalItems: 0, totalPrice: 0, couponCode: null, discount: 0, offerDiscount: 0 } });
+  return persistWithOffers(cart.id, []);
 }

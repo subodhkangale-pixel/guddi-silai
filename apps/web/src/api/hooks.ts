@@ -12,11 +12,49 @@ import {
   getSubCategories,
 } from './catalogApi';
 import { Category, CursorResponse, ProductCard, ProductDetail, ProductQuery } from './types';
-import { addCartItem, applyCoupon, clearCart, getCart, removeCoupon, updateCartItem, updateMeasurements, AddCartItemInput, MeasurementValue } from './cartApi';
+import { addCartItem, applyCoupon, clearCart, getCart, removeCoupon, updateCartItem, updateMeasurements, updateStyleOptions, AddCartItemInput, MeasurementValue, UpdateStyleOptionsInput } from './cartApi';
 import { getMeasurementFields } from './measurementApi';
 import { getFiberAvailability } from './catalogApi';
 import { createOrder, CreateOrderInput, getOrders, getOrderByNumber } from './orderApi';
+import { getAddons, adminListAddons, adminCreateAddon, adminUpdateAddon, adminRemoveAddon, AdminAddonInput } from './addonApi';
 import { getNotifications, markNotificationRead } from './notificationApi';
+import {
+  adminListReviews,
+  adminModerateReview,
+  createReview,
+  CreateReviewInput,
+  getProductReviews,
+} from './reviewApi';
+import {
+  adminCreateCoupon,
+  adminDeleteCoupon,
+  adminListCoupons,
+  adminUpdateCoupon,
+  Coupon,
+  CouponInput,
+} from './couponApi';
+import {
+  adminCreateOffer,
+  adminDeactivateOffer,
+  adminListOffers,
+  Offer,
+  OfferInput,
+} from './offerApi';
+import {
+  adminCreateUser,
+  adminDeleteUser,
+  adminListUsers,
+  adminUpdateUser,
+  adminListRoles,
+  adminCreateRole,
+  adminUpdateRole,
+  adminDeleteRole,
+  adminListPermissions,
+  adminListActivity,
+  AdminUserInput,
+  AdminRoleInput,
+  ActivityQuery,
+} from './adminManagementApi';
 
 // ──────────────────────────────────────────────
 // Catalogue reference hooks
@@ -122,6 +160,16 @@ export function useUpdateMeasurements() {
   });
 }
 
+export function useUpdateStyleOptions() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ index, styleOptions }: { index: number; styleOptions: UpdateStyleOptionsInput['styleOptions'] }) => updateStyleOptions(index, styleOptions),
+    onSuccess: (result) => {
+      queryClient.setQueryData(['cart'], result);
+    },
+  });
+}
+
 export function useClearCart() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -150,6 +198,10 @@ export function useCreateOrder() {
       queryClient.invalidateQueries({ queryKey: ['cart'] });
     },
   });
+}
+
+export function useAddons() {
+  return useQuery({ queryKey: ['addons'], queryFn: getAddons });
 }
 
 export function useOrders() {
@@ -188,4 +240,184 @@ export function useAdminMe(token: string | null) {
     enabled: Boolean(token),
     retry: false,
   });
+}
+
+// ──────────────────────────────────────────────
+// Reviews
+// ──────────────────────────────────────────────
+
+export function useProductReviews(productId: string | undefined) {
+  return useQuery({
+    queryKey: ['reviews', productId],
+    queryFn: () => getProductReviews(productId!),
+    enabled: Boolean(productId),
+  });
+}
+
+export function useCreateReview() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreateReviewInput) => createReview(input),
+    onSuccess: (_, variables) => {
+      void queryClient.invalidateQueries({ queryKey: ['reviews', variables.productId] });
+    },
+  });
+}
+
+export function useAdminReviews(status?: string) {
+  return useQuery({
+    queryKey: ['admin-reviews', status],
+    queryFn: () => adminListReviews(status),
+  });
+}
+
+export function useAdminModerateReview() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, status }: { id: string; status: 'approved' | 'rejected' }) =>
+      adminModerateReview(id, status),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['admin-reviews'] });
+    },
+  });
+}
+
+// ──────────────────────────────────────────────
+// Admin coupons
+// ──────────────────────────────────────────────
+
+export function useAdminCoupons() {
+  return useQuery({ queryKey: ['admin-coupons'], queryFn: adminListCoupons });
+}
+
+export function useAdminCouponMutations() {
+  const queryClient = useQueryClient();
+  const refresh = () => void queryClient.invalidateQueries({ queryKey: ['admin-coupons'] });
+  const create = useMutation({
+    mutationFn: (input: CouponInput) => adminCreateCoupon(input),
+    onSuccess: refresh,
+  });
+  const update = useMutation({
+    mutationFn: ({ id, input }: { id: string; input: Partial<CouponInput> }) =>
+      adminUpdateCoupon(id, input),
+    onSuccess: refresh,
+  });
+  const remove = useMutation({
+    mutationFn: (id: string) => adminDeleteCoupon(id),
+    onSuccess: refresh,
+  });
+  return { create, update, remove };
+}
+
+// ──────────────────────────────────────────────
+// Admin offers
+// ──────────────────────────────────────────────
+
+export function useAdminOffers() {
+  return useQuery({ queryKey: ['admin-offers'], queryFn: adminListOffers });
+}
+
+export function useAdminOfferMutations() {
+  const queryClient = useQueryClient();
+  const refresh = () => void queryClient.invalidateQueries({ queryKey: ['admin-offers'] });
+  const create = useMutation({
+    mutationFn: (input: OfferInput) => adminCreateOffer(input),
+    onSuccess: refresh,
+  });
+  const deactivate = useMutation({
+    mutationFn: (id: string) => adminDeactivateOffer(id),
+    onSuccess: refresh,
+  });
+  return { create, deactivate };
+}
+
+// ──────────────────────────────────────────────
+// Admin users / roles / permissions / activity
+// ──────────────────────────────────────────────
+
+export function useAdminUsers() {
+  return useQuery({ queryKey: ['admin-users'], queryFn: adminListUsers });
+}
+
+export function useAdminUserMutations() {
+  const queryClient = useQueryClient();
+  const refreshAdminUsers = () => void queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+  const create = useMutation({
+    mutationFn: (input: AdminUserInput) => adminCreateUser(input),
+    onSuccess: refreshAdminUsers,
+  });
+  const update = useMutation({
+    mutationFn: ({ id, input }: { id: string; input: Partial<AdminUserInput> & { isActive?: boolean } }) =>
+      adminUpdateUser(id, input),
+    onSuccess: refreshAdminUsers,
+  });
+  const remove = useMutation({
+    mutationFn: (id: string) => adminDeleteUser(id),
+    onSuccess: refreshAdminUsers,
+  });
+  return { create, update, remove };
+}
+
+export function useAdminRoles() {
+  return useQuery({ queryKey: ['admin-roles'], queryFn: adminListRoles });
+}
+
+export function useAdminRoleMutations() {
+  const queryClient = useQueryClient();
+  const refreshRoles = () => {
+    void queryClient.invalidateQueries({ queryKey: ['admin-roles'] });
+    void queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+  };
+  const create = useMutation({
+    mutationFn: (input: AdminRoleInput) => adminCreateRole(input),
+    onSuccess: refreshRoles,
+  });
+  const update = useMutation({
+    mutationFn: ({ id, input }: { id: string; input: Partial<AdminRoleInput> }) =>
+      adminUpdateRole(id, input),
+    onSuccess: refreshRoles,
+  });
+  const remove = useMutation({
+    mutationFn: (id: string) => adminDeleteRole(id),
+    onSuccess: refreshRoles,
+  });
+  return { create, update, remove };
+}
+
+export function useAdminPermissions() {
+  return useQuery({ queryKey: ['admin-permissions'], queryFn: adminListPermissions });
+}
+
+export function useAdminActivity(query: ActivityQuery = {}) {
+  return useQuery({ queryKey: ['admin-activity', query], queryFn: () => adminListActivity(query), placeholderData: (previous) => previous });
+}
+
+// ──────────────────────────────────────────────
+// Admin add-ons
+// ──────────────────────────────────────────────
+
+export function useAdminAddons() {
+  return useQuery({ queryKey: ['admin-addons'], queryFn: adminListAddons });
+}
+
+export function useAdminAddonMutations() {
+  const queryClient = useQueryClient();
+  const refresh = () => {
+    void queryClient.invalidateQueries({ queryKey: ['admin-addons'] });
+    void queryClient.invalidateQueries({ queryKey: ['addons'] });
+  };
+  const create = useMutation({
+    mutationFn: (input: AdminAddonInput) => adminCreateAddon(input),
+    onSuccess: refresh,
+  });
+  const update = useMutation({
+    mutationFn: ({ id, input }: { id: string; input: Partial<AdminAddonInput> }) =>
+      adminUpdateAddon(id, input),
+    onSuccess: refresh,
+  });
+  const remove = useMutation({
+    mutationFn: (id: string) => adminRemoveAddon(id),
+    onSuccess: refresh,
+  });
+  return { create, update, remove };
 }

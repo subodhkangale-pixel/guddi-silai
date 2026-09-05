@@ -89,6 +89,8 @@ export async function createGuest(): Promise<GuestResult> {
   const user = await prisma.user.create({
     data: {
       name: `Guest ${suffix}`,
+      email: `guest-${suffix}@guest.guddisilai.local`,
+      googleId: `guest-${suffix}`,
       isGuest: true,
     },
   });
@@ -231,6 +233,7 @@ export async function mergeGuestCart(
   }
 
   await prisma.cart.delete({ where: { id: guestCart.id } });
+  await prisma.order.updateMany({ where: { userId: guestId }, data: { userId } });
   await prisma.user.update({
     where: { id: guestId },
     data: { isActive: false },

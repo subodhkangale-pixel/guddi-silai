@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /checkout
+Disallow: /cart
+Disallow: /login
+Disallow: /register
+Disallow: /orders
+Disallow: /notifications
+
+Sitemap: http://localhost:3000/sitemap.xml
