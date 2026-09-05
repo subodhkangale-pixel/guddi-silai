@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('../src/lib/prisma.js', () => ({
   prisma: {
     cart: { findUnique: vi.fn(), update: vi.fn() },
-    order: { create: vi.fn(), findMany: vi.fn() },
+    order: { create: vi.fn(), findMany: vi.fn(), findUnique: vi.fn(), update: vi.fn() },
     productVariant: { findUnique: vi.fn(), update: vi.fn() },
     fiberInventory: { findUnique: vi.fn(), update: vi.fn() },
     stockMovement: { create: vi.fn() },
@@ -31,6 +31,7 @@ beforeEach(() => {
   prisma.notification.create.mockResolvedValue({});
   prisma.adminUser.findMany.mockResolvedValue([]);
   prisma.order.create.mockImplementation(async ({ data }) => ({ id: 'o1', ...data }));
+  prisma.order.update.mockImplementation(async ({ data }) => ({ id: 'o1', status: data.status }));
 });
 
 describe('order service', () => {
@@ -71,5 +72,11 @@ describe('order service', () => {
         })],
       }),
     }));
+  });
+
+  it('allows only the next lifecycle status or cancellation', async () => {
+    prisma.order.findUnique.mockResolvedValue({ id: 'o1', status: 'PLACED' });
+    await expect(ordersService.adminUpdateStatus('o1', 'CONFIRMED')).resolves.toMatchObject({ status: 'CONFIRMED' });
+    await expect(ordersService.adminUpdateStatus('o1', 'DELIVERED')).rejects.toMatchObject({ statusCode: 409 });
   });
 });

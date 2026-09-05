@@ -1,4 +1,5 @@
 import { OrderStatus, PaymentMethod, PaymentStatus } from '@prisma/client';
+import { ORDER_STATUS_FLOW, ORDER_TERMINAL_STATUSES } from '@guddi-silai/shared';
 
 import { prisma } from '../lib/prisma.js';
 import { AppError } from '../middleware/errorHandler.js';
@@ -159,5 +160,14 @@ export async function adminListOrders(status?: OrderStatus) {
 export async function adminUpdateStatus(orderId: string, status: OrderStatus) {
   const order = await prisma.order.findUnique({ where: { id: orderId } });
   if (!order) throw new AppError(404, 'Order not found');
+  if (order.status !== status) {
+    const currentIndex = ORDER_STATUS_FLOW.indexOf(order.status as (typeof ORDER_STATUS_FLOW)[number]);
+    const nextIndex = ORDER_STATUS_FLOW.indexOf(status as (typeof ORDER_STATUS_FLOW)[number]);
+    const isTerminal = ORDER_TERMINAL_STATUSES.includes(status as (typeof ORDER_TERMINAL_STATUSES)[number]);
+    const canCancel = isTerminal && status === 'CANCELLED' && !ORDER_TERMINAL_STATUSES.includes(order.status as (typeof ORDER_TERMINAL_STATUSES)[number]);
+    if (!canCancel && (currentIndex < 0 || nextIndex !== currentIndex + 1)) {
+      throw new AppError(409, `Invalid order transition from ${order.status} to ${status}`);
+    }
+  }
   return prisma.order.update({ where: { id: orderId }, data: { status } });
 }

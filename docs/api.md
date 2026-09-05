@@ -236,7 +236,8 @@ custom fabric selection, measurement completion, stock validation, and server to
   §35).
 - Admin: `GET/PATCH /admin/orders` with status filters and RBAC-protected status updates.
 - Remaining: dedicated tracking endpoint, cancellation/refunds, fiber inventory decrement, and notification delivery.
-- Order-status transitions use the exact PDF labels (§35/§42) — see database-design §9.2.
+- Order-status transitions use the exact PDF labels and enforce sequential progression; cancellation is controlled
+  as a terminal transition (§35/§42) — see database-design §9.2.
 
 ---
 

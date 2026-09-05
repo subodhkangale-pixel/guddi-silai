@@ -90,7 +90,7 @@
         (~1.6–1.9%, T+1) documented as fallback gateway; **Instamojo links** for WhatsApp-driven sales
 
 ## Phase 12 — Orders (§35, §42–§44)
-- [ ] Order lifecycle with PDF statuses: Placed → Confirmed → Processing → Stitching → Quality Check → Packed →
+- [x] Order lifecycle with enforced sequential PDF statuses: Placed → Confirmed → Processing → Stitching → Quality Check → Packed →
         Shipped → Delivered (+ Cancelled/Returned/Failed)
 - [ ] My Orders (order id, date, products, amount, payment status, order status)
 - [ ] Admin order management + filters + custom-order detail (measurements + version)
