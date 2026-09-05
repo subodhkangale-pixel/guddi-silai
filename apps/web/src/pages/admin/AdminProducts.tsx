@@ -5,8 +5,10 @@ import {
   adminAddVariant,
   adminCreateProduct,
   adminDeleteProduct,
+  adminDeleteVariant,
   adminListProducts,
   adminUploadProductImages,
+  adminUpdateVariant,
   adminUpdateProduct,
 } from '../../api/catalogApi';
 import { useCategories, useColors, useEmbroideries, useFibers, useSizes, useSubCategories } from '../../api/hooks';
@@ -65,6 +67,7 @@ function AdminProducts() {
   const [productId, setProductId] = useState<string | null>(null);
   const [form, setForm] = useState<ProductForm>(emptyForm());
   const [variants, setVariants] = useState<VariantDraft[]>([]);
+  const [removedVariantIds, setRemovedVariantIds] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -92,6 +95,7 @@ function AdminProducts() {
     setProductId(null);
     setForm(emptyForm());
     setVariants([]);
+    setRemovedVariantIds([]);
     setModalOpen(true);
   }
 
@@ -123,6 +127,7 @@ function AdminProducts() {
         stock: String(v.stock),
       }))
     );
+    setRemovedVariantIds([]);
     setModalOpen(true);
   }
 
@@ -130,6 +135,7 @@ function AdminProducts() {
     setModalOpen(false);
     setProductId(null);
     setVariants([]);
+    setRemovedVariantIds([]);
     setError(null);
   }
 
@@ -165,15 +171,17 @@ function AdminProducts() {
   }
 
   async function syncVariants(saved: AdminProduct) {
+    await Promise.all(removedVariantIds.map((id) => adminDeleteVariant(id)));
     for (const draft of variants) {
-      if (draft.id) continue;
-      await adminAddVariant(saved.id, {
+      const body = {
         colorId: draft.colorId,
         sizeId: draft.sizeId,
         sku: draft.sku || undefined,
         price: Number(draft.price),
         stock: Number(draft.stock) || 0,
-      });
+      };
+      if (draft.id) await adminUpdateVariant(draft.id, body);
+      else await adminAddVariant(saved.id, body);
     }
   }
 
@@ -223,6 +231,12 @@ function AdminProducts() {
     setVariants((list) =>
       list.map((draft, i) => (i === index ? { ...draft, [key]: value } : draft))
     );
+  }
+
+  function removeVariant(index: number) {
+    const draft = variants[index];
+    if (draft?.id) setRemovedVariantIds((ids) => [...ids, draft.id!]);
+    setVariants((list) => list.filter((_, itemIndex) => itemIndex !== index));
   }
 
   const records = productsQuery.data?.data.data ?? [];
@@ -574,7 +588,7 @@ function AdminProducts() {
                     />
                     <button
                       type="button"
-                      onClick={() => setVariants((list) => list.filter((_, i) => i !== index))}
+                      onClick={() => removeVariant(index)}
                       className="rounded-md p-2 text-red-500 hover:bg-red-50"
                     >
                       ✕
