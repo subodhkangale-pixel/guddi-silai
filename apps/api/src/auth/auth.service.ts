@@ -19,6 +19,7 @@ import {
   verifyToken,
 } from './auth.utils.js';
 import { CartItem } from '@prisma/client';
+import { randomUUID } from 'node:crypto';
 
 async function issueSession(
   user: Parameters<typeof toPublicUser>[0]
@@ -45,6 +46,9 @@ export async function register(input: RegisterInput): Promise<AuthResult> {
       name: input.name,
       email: input.email,
       passwordHash,
+      // MongoDB unique indexes allow only one null. Keep email/password users
+      // distinct until a verified Google account is linked by email.
+      googleId: `email-${randomUUID()}`,
     },
   });
 
