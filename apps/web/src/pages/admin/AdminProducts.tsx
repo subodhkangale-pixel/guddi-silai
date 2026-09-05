@@ -5,8 +5,11 @@ import {
   adminAddVariant,
   adminCreateProduct,
   adminDeleteProduct,
+  adminDeleteVariant,
+  adminGetProduct,
   adminListProducts,
   adminUploadProductImages,
+  adminUpdateVariant,
   adminUpdateProduct,
 } from '../../api/catalogApi';
 import { useCategories, useColors, useEmbroideries, useFibers, useSizes, useSubCategories } from '../../api/hooks';
@@ -65,8 +68,10 @@ function AdminProducts() {
   const [productId, setProductId] = useState<string | null>(null);
   const [form, setForm] = useState<ProductForm>(emptyForm());
   const [variants, setVariants] = useState<VariantDraft[]>([]);
+  const [removedVariantIds, setRemovedVariantIds] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [loadingProductId, setLoadingProductId] = useState<string | null>(null);
 
   const categories = useCategories();
   const colors = useColors();
@@ -92,44 +97,55 @@ function AdminProducts() {
     setProductId(null);
     setForm(emptyForm());
     setVariants([]);
+    setRemovedVariantIds([]);
     setModalOpen(true);
   }
 
-  function openEdit(product: AdminProduct) {
+  async function openEdit(productId: string) {
     setError(null);
-    setProductId(product.id);
-    setForm({
-      name: product.name,
-      designId: product.designId ?? '',
-      type: product.type,
-      description: product.description ?? '',
-      categoryId: product.categoryId,
-      subCategoryId: product.subCategoryId ?? '',
-      basePrice: String(product.basePrice),
-      images: product.images.join(', '),
-      tags: product.tags.join(', '),
-      colors: product.colors.map((c) => c.id),
-      sizes: product.sizes.map((s) => s.id),
-      fiberIds: product.fiberOptions.map((f) => f.id),
-      embroideryIds: product.embroideryOptions.map((e) => e.id),
-    });
-    setVariants(
-      product.variants.map((v) => ({
-        id: v.id,
-        colorId: v.colorId,
-        sizeId: v.sizeId,
-        sku: v.sku ?? '',
-        price: String(v.price),
-        stock: String(v.stock),
-      }))
-    );
-    setModalOpen(true);
+    setLoadingProductId(productId);
+    try {
+      const { data: product } = await adminGetProduct(productId);
+      const colors = product.colors as unknown as Array<{ colorId?: string; id?: string }>;
+      const sizes = product.sizes as unknown as Array<{ sizeId?: string; id?: string }>;
+      setProductId(product.id);
+      setForm({
+        name: product.name,
+        designId: product.designId ?? '',
+        type: product.type,
+        description: product.description ?? '',
+        categoryId: product.categoryId,
+        subCategoryId: product.subCategoryId ?? '',
+        basePrice: String(product.basePrice),
+        images: product.images.join(', '),
+        tags: product.tags.join(', '),
+        colors: colors.map((color) => color.colorId ?? color.id).filter((id): id is string => Boolean(id)),
+        sizes: sizes.map((size) => size.sizeId ?? size.id).filter((id): id is string => Boolean(id)),
+        fiberIds: product.fiberOptions.map((fiber) => fiber.id),
+        embroideryIds: product.embroideryOptions.map((embroidery) => embroidery.id),
+      });
+      setVariants(product.variants.map((variant) => ({
+        id: variant.id,
+        colorId: variant.colorId,
+        sizeId: variant.sizeId,
+        sku: variant.sku ?? '',
+        price: String(variant.price),
+        stock: String(variant.stock),
+      })));
+      setRemovedVariantIds([]);
+      setModalOpen(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not load product details');
+    } finally {
+      setLoadingProductId(null);
+    }
   }
 
   function closeModal() {
     setModalOpen(false);
     setProductId(null);
     setVariants([]);
+    setRemovedVariantIds([]);
     setError(null);
   }
 
@@ -165,15 +181,17 @@ function AdminProducts() {
   }
 
   async function syncVariants(saved: AdminProduct) {
+    await Promise.all(removedVariantIds.map((id) => adminDeleteVariant(id)));
     for (const draft of variants) {
-      if (draft.id) continue;
-      await adminAddVariant(saved.id, {
+      const body = {
         colorId: draft.colorId,
         sizeId: draft.sizeId,
         sku: draft.sku || undefined,
         price: Number(draft.price),
         stock: Number(draft.stock) || 0,
-      });
+      };
+      if (draft.id) await adminUpdateVariant(draft.id, body);
+      else await adminAddVariant(saved.id, body);
     }
   }
 
@@ -225,8 +243,22 @@ function AdminProducts() {
     );
   }
 
+  function removeVariant(index: number) {
+    const draft = variants[index];
+    if (draft?.id) setRemovedVariantIds((ids) => [...ids, draft.id!]);
+    setVariants((list) => list.filter((_, itemIndex) => itemIndex !== index));
+  }
+
   const records = productsQuery.data?.data.data ?? [];
   const totalPages = productsQuery.data?.data.totalPages ?? 1;
+  const imageUrls = form.images.split(',').map((value) => value.trim()).filter(Boolean);
+
+  function removeImage(url: string) {
+    setForm((current) => ({
+      ...current,
+      images: current.images.split(',').map((value) => value.trim()).filter((value) => value && value !== url).join(', '),
+    }));
+  }
 
   return (
     <div>
@@ -287,10 +319,11 @@ function AdminProducts() {
                   <td className="px-4 py-3">{product.totalStock}</td>
                   <td className="px-4 py-3 text-right">
                     <button
-                      onClick={() => openEdit(product)}
+                      onClick={() => void openEdit(product.id)}
+                      disabled={loadingProductId === product.id}
                       className="mr-2 rounded-md border border-gray-300 px-3 py-1 text-xs text-gray-700 hover:bg-gray-50"
                     >
-                      Edit
+                      {loadingProductId === product.id ? 'Loading…' : 'Edit'}
                     </button>
                     <button
                       onClick={() => {
@@ -444,6 +477,23 @@ function AdminProducts() {
                   className="input"
                   placeholder="https://…, https://…"
                 />
+                {imageUrls.length > 0 && (
+                  <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-5">
+                    {imageUrls.map((url, index) => (
+                      <div key={url} className="relative aspect-square overflow-hidden rounded-md border border-gray-200 bg-gray-50">
+                        <img src={url} alt={`Product image ${index + 1}`} className="h-full w-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(url)}
+                          className="absolute right-1 top-1 rounded bg-white/95 px-1.5 py-0.5 text-xs font-bold text-red-600 shadow hover:bg-white"
+                          aria-label={`Remove product image ${index + 1}`}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </FormField>
               <FormField label="Tags (comma-separated)">
                 <input
@@ -549,7 +599,7 @@ function AdminProducts() {
                     />
                     <button
                       type="button"
-                      onClick={() => setVariants((list) => list.filter((_, i) => i !== index))}
+                      onClick={() => removeVariant(index)}
                       className="rounded-md p-2 text-red-500 hover:bg-red-50"
                     >
                       ✕

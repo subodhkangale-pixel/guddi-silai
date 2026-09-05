@@ -38,6 +38,12 @@ export const uploadProductImages = asyncHandler(async (req: Request, res: Respon
     secure: true,
   });
 
-  const urls = await Promise.all(files.map((file) => uploadImage(file.buffer)));
+  let urls: string[];
+  try {
+    urls = await Promise.all(files.map((file) => uploadImage(file.buffer)));
+  } catch (error) {
+    const providerError = error as { error?: { message?: string }; message?: string };
+    throw new AppError(502, `Cloudinary upload failed: ${providerError.error?.message ?? providerError.message ?? 'unknown provider error'}`);
+  }
   res.status(201).json({ data: { urls } });
 });

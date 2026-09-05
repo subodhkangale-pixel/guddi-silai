@@ -115,6 +115,10 @@ export async function adminCreateProduct(body: unknown) {
   });
 }
 
+export async function adminGetProduct(id: string) {
+  return apiRequestAuth<{ data: AdminProduct }>(`/admin/products/${id}`);
+}
+
 export async function adminUpdateProduct(id: string, body: unknown) {
   return apiRequestAuth<{ data: AdminProduct }>(`/admin/products/${id}`, {
     method: 'PATCH',
