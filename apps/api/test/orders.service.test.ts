@@ -10,6 +10,7 @@ vi.mock('../src/lib/prisma.js', () => ({
     coupon: { findUnique: vi.fn(), update: vi.fn() },
     notification: { create: vi.fn() },
     adminUser: { findMany: vi.fn() },
+    measurementField: { findMany: vi.fn() },
   },
 }));
 
@@ -30,6 +31,7 @@ beforeEach(() => {
   prisma.coupon.update.mockResolvedValue({});
   prisma.notification.create.mockResolvedValue({});
   prisma.adminUser.findMany.mockResolvedValue([]);
+  prisma.measurementField.findMany.mockResolvedValue([{ id: 'mf-bust', key: 'bust' }]);
   prisma.order.create.mockImplementation(async ({ data }) => ({ id: 'o1', ...data }));
   prisma.order.update.mockImplementation(async ({ data }) => ({ id: 'o1', status: data.status }));
 });
@@ -66,7 +68,7 @@ describe('order service', () => {
           measurementSnapshot: expect.objectContaining({
             measurementInstructionVersion: 1,
             values: [expect.objectContaining({
-              fieldId: 'bust', fieldKey: 'bust', label: 'Bust', value: 34, unit: 'INCHES',
+              fieldId: 'mf-bust', fieldKey: 'bust', label: 'Bust', value: 34, unit: 'INCHES',
             })],
           }),
         })],

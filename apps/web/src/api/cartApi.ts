@@ -26,6 +26,12 @@ export interface CartItem {
   measurementValues: unknown;
 }
 
+export interface CartSections {
+  readyMade: { count: number; quantity: number; subtotal: number };
+  customize: { count: number; quantity: number; subtotal: number };
+  measurementPending: boolean;
+}
+
 export interface Cart {
   id: string;
   items: CartItem[];
@@ -33,6 +39,8 @@ export interface Cart {
   totalPrice: number;
   couponCode?: string | null;
   discount?: number;
+  offerDiscount?: number;
+  sections?: CartSections;
 }
 
 export interface AddCartItemInput {
@@ -41,10 +49,12 @@ export interface AddCartItemInput {
   variantId?: string;
   colorId?: string;
   fiberId?: string;
+  embroideryId?: string;
   quantity?: number;
 }
 
 export interface MeasurementValue {
+  fieldId?: string;
   fieldKey: string;
   label: string;
   value: number;

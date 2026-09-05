@@ -379,6 +379,35 @@ function sortCursorValue(sort: SortOption, product: { basePrice: number; created
   return product.createdAt.toISOString();
 }
 
+export async function getFiberAvailability(productId: string) {
+  const product = await prisma.product.findUnique({ where: { id: productId } });
+  if (!product || product.isActive === false) throw new AppError(404, 'Product not found');
+
+  const [inventory, colors] = await Promise.all([
+    prisma.fiberInventory.findMany({
+      where: { fiberId: { in: product.fiberOptions.map((option) => option.id) } },
+    }),
+    prisma.color.findMany({ where: { isActive: true } }),
+  ]);
+  const colorMap = new Map(colors.map((color) => [color.id, color.name]));
+  const stockByFiberColor = new Map<string, number>();
+  for (const item of inventory) stockByFiberColor.set(`${item.fiberId}:${item.colorId}`, item.stock);
+
+  return product.fiberOptions.map((option) => ({
+    fiberId: option.id,
+    fiberName: option.name,
+    fiberPrice: option.price ?? 0,
+    colors: product.colors
+      .map((entry) => entry.colorId)
+      .filter((colorId): colorId is string => colorId !== null)
+      .map((colorId) => ({
+        colorId,
+        colorName: colorMap.get(colorId) ?? colorId,
+        stock: stockByFiberColor.get(`${option.id}:${colorId}`) ?? 0,
+      })),
+  }));
+}
+
 export async function getProductBySlug(slug: string) {
   const product = await prisma.product.findUnique({ where: { slug } });
   if (!product || product.isActive === false) {

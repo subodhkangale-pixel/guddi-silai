@@ -61,6 +61,17 @@ export async function getProductBySlug(slug: string) {
   return apiRequest<{ data: ProductDetail }>(`/products/${slug}`);
 }
 
+export interface FiberAvailability {
+  fiberId: string;
+  fiberName: string;
+  fiberPrice: number;
+  colors: { colorId: string; colorName: string; stock: number }[];
+}
+
+export async function getFiberAvailability(productId: string) {
+  return apiRequest<{ data: FiberAvailability[] }>(`/products/fiber/${productId}/availability`);
+}
+
 // ──────────────────────────────────────────────
 // Admin catalogue + products
 // ──────────────────────────────────────────────

@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 
-import { PaymentStatus } from '@prisma/client';
+import { PaymentMethod, PaymentStatus } from '@prisma/client';
 
 import { env } from '../config/env.js';
 import { prisma } from '../lib/prisma.js';
@@ -22,7 +22,10 @@ async function findOwnedOrder(userId: string, orderNumber: string) {
 export async function createPayment(userId: string, input: CreatePaymentInput) {
   requireRazorpayConfig();
   const order = await findOwnedOrder(userId, input.orderNumber);
-  if (order.payment?.method !== 'RAZORPAY') throw new AppError(400, 'This order does not use online payment');
+  const onlineMethods: PaymentMethod[] = [PaymentMethod.RAZORPAY, PaymentMethod.UPI, PaymentMethod.NET_BANKING];
+  if (!order.payment || !onlineMethods.includes(order.payment.method)) {
+    throw new AppError(400, 'This order does not use online payment');
+  }
   if (order.payment.status === PaymentStatus.SUCCESS) throw new AppError(409, 'Order is already paid');
 
   const response = await fetch('https://api.razorpay.com/v1/orders', {

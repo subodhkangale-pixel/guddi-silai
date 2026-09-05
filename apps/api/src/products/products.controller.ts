@@ -20,6 +20,11 @@ export const getProductBySlug = asyncHandler(async (req: Request, res: Response)
   res.json({ data: product });
 });
 
+export const getFiberAvailability = asyncHandler(async (req: Request, res: Response) => {
+  const result = await productsService.getFiberAvailability(req.params.productId);
+  res.json({ data: result });
+});
+
 // ──────────────────────────────────────────────
 // Admin: products
 // ──────────────────────────────────────────────

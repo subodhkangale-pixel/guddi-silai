@@ -13,6 +13,8 @@ import {
 } from './catalogApi';
 import { Category, CursorResponse, ProductCard, ProductDetail, ProductQuery } from './types';
 import { addCartItem, applyCoupon, clearCart, getCart, removeCoupon, updateCartItem, updateMeasurements, AddCartItemInput, MeasurementValue } from './cartApi';
+import { getMeasurementFields } from './measurementApi';
+import { getFiberAvailability } from './catalogApi';
 import { createOrder, CreateOrderInput, getOrders } from './orderApi';
 import { getNotifications, markNotificationRead } from './notificationApi';
 
@@ -73,8 +75,20 @@ export function useProduct(slug: string | undefined) {
   });
 }
 
+export function useFiberAvailability(productId: string | undefined) {
+  return useQuery({
+    queryKey: ['fiber-availability', productId],
+    queryFn: () => getFiberAvailability(productId!),
+    enabled: Boolean(productId),
+  });
+}
+
 export function useCart() {
   return useQuery({ queryKey: ['cart'], queryFn: getCart });
+}
+
+export function useMeasurementFields() {
+  return useQuery({ queryKey: ['measurement-fields'], queryFn: getMeasurementFields, staleTime: 60 * 60 * 1000 });
 }
 
 export function useAddCartItem() {

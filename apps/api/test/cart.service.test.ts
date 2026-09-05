@@ -8,6 +8,7 @@ vi.mock('../src/lib/prisma.js', () => ({
     fiberInventory: { findUnique: vi.fn() },
     color: { findUnique: vi.fn() },
     size: { findUnique: vi.fn() },
+    measurementField: { findMany: vi.fn() },
   },
 }));
 
@@ -43,6 +44,7 @@ beforeEach(() => {
   prisma.color.findUnique.mockResolvedValue({ name: 'Red' });
   prisma.size.findUnique.mockResolvedValue({ name: 'M' });
   prisma.fiberInventory.findUnique.mockResolvedValue({ id: 'fi-1', stock: 5 });
+  prisma.measurementField.findMany.mockResolvedValue([{ id: 'mf-bust', key: 'bust', label: 'Bust', isRequired: true }]);
   prisma.cart.update.mockImplementation(async ({ data }) => ({ ...cart, ...data }));
 });
 
@@ -120,7 +122,7 @@ describe('cart service', () => {
     });
     expect(result.items[0]).toMatchObject({ measurementStatus: 'COMPLETE' });
     expect(result.items[0].measurementValues).toEqual([
-      { fieldKey: 'bust', label: 'Bust', value: 34, unit: 'INCHES' },
+      { fieldId: 'mf-bust', fieldKey: 'bust', label: 'Bust', value: 34, unit: 'INCHES' },
     ]);
   });
 });
