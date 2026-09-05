@@ -47,7 +47,7 @@ function ProductCard({ product }: { product: ProductCardType | WishlistProduct }
         type="button"
         aria-label={wishlist.isSaved(product.id) ? 'Remove from wishlist' : 'Add to wishlist'}
         onClick={() => wishlist.toggle(product)}
-        className="absolute right-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-lg shadow-sm"
+        className={`absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full bg-white/95 text-2xl shadow-sm ring-1 ring-black/5 transition hover:scale-105 ${wishlist.isSaved(product.id) ? 'text-pink-600' : 'text-gray-700'}`}
       >
         {wishlist.isSaved(product.id) ? '♥' : '♡'}
       </button>

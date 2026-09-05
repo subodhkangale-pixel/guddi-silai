@@ -19,8 +19,9 @@ function CartPage() {
     return <div className="mx-auto max-w-3xl px-4 py-16 text-center text-red-700">Could not load your cart.</div>;
   }
 
-  const readyItems = items.filter((item) => item.productType === 'READY_MADE');
-  const customItems = items.filter((item) => item.productType === 'CUSTOMIZE');
+  const indexedItems = items.map((item, index) => ({ item, index }));
+  const readyItems = indexedItems.filter(({ item }) => item.productType === 'READY_MADE');
+  const customItems = indexedItems.filter(({ item }) => item.productType === 'CUSTOMIZE');
   const measurementPending = cart.data?.data.sections?.measurementPending;
 
   return (
@@ -49,8 +50,8 @@ function CartPage() {
               <div>
                 <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-gray-700">Ready to buy <span className="ml-1 rounded bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">{readyItems.length}</span></h2>
                 <div className="space-y-4">
-                  {readyItems.map((item, originalIndex) => (
-                    <CartItemRow key={item.productId + (item.variantId ?? originalIndex)} item={item} index={originalIndex} itemType="ready" />
+                  {readyItems.map(({ item, index }) => (
+                    <CartItemRow key={item.productId + (item.variantId ?? index)} item={item} index={index} itemType="ready" />
                   ))}
                 </div>
               </div>
@@ -60,8 +61,8 @@ function CartPage() {
                 <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-gray-700">Customize with measurement <span className="ml-1 rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">{customItems.length}</span></h2>
                 {measurementPending && <p className="mb-3 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">⚠ Complete measurements for custom items before checkout.</p>}
                 <div className="space-y-4">
-                  {customItems.map((item, originalIndex) => (
-                    <CartItemRow key={item.productId + (item.fiberId ?? originalIndex)} item={item} index={originalIndex} itemType="custom" />
+                  {customItems.map(({ item, index }) => (
+                    <CartItemRow key={item.productId + (item.fiberId ?? index)} item={item} index={index} itemType="custom" />
                   ))}
                 </div>
               </div>
@@ -111,6 +112,14 @@ function CartItemRow({ item, index, itemType }: { item: { productType: 'READY_MA
           <select id={`quantity-${index}`} value={item.quantity} onChange={(event) => update.mutate({ index, quantity: Number(event.target.value) })} className="rounded border border-gray-300 px-2 py-1 text-sm">
             {Array.from({ length: 10 }, (_, quantity) => quantity + 1).map((quantity) => <option key={quantity} value={quantity}>{quantity}</option>)}
           </select>
+          <button
+            type="button"
+            onClick={() => update.mutate({ index, quantity: 0 })}
+            disabled={update.isPending}
+            className="ml-auto text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-50"
+          >
+            Remove
+          </button>
         </div>
         {itemType === 'custom' && (
           <MeasurementForm
