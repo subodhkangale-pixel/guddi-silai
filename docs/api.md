@@ -261,7 +261,8 @@ custom fabric selection, measurement completion, stock validation, and server to
 - `POST/DELETE /coupons/apply` and `/coupons` apply/remove server-side coupons on guest or authenticated carts.
 - Admin `GET/POST /admin/coupons` manages percent/fixed coupons with minimum order, max discount, product scope,
   expiry, and usage limit.
-- Offers remain planned (§50: product/category/festival/limited-time discounts).
+- `GET /offers` exposes currently active offers; admin `GET/POST/DELETE /offers/admin` manages offers with
+  `offer:write` RBAC. Applying offer discounts to cart totals remains next.
 - Admin CRUD for offers (§50: product discount, category discount, festival sale, limited-time).
 - Application evaluated server-side at cart/checkout.
 

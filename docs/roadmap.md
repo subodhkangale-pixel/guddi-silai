@@ -115,7 +115,8 @@
 ## Phase 15 — Reviews / Coupons / Offers
 - [x] Reviews for ready-to-buy (rating, text, photo URL) + admin moderation (§34)
 - [x] Coupon creation/application/removal with server-side validation and order snapshots (§49)
-- [ ] Offers/product-category-festival discounts (§50)
+- [x] Offer active-listing and admin create/deactivate foundation (§50)
+- [ ] Apply product/category/festival offers to cart totals and order snapshots (§50)
 
 ## Phase 16 — Analytics Events (§76–§78)
 - [x] Event ingestion for the required event set + product view start/end
