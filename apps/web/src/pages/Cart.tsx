@@ -144,8 +144,9 @@ function MeasurementForm({ complete, pending, onSubmit }: { complete: boolean; p
 
   if (!open && complete) return <p className="mt-2 text-sm font-medium text-green-700">✓ Measurements complete <button type="button" onClick={() => setOpen(true)} className="ml-2 underline">Edit</button></p>;
   return (
-    <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3">
-      <p className="text-sm font-semibold text-gray-900">{complete ? 'Update measurements' : 'Complete measurements'}</p>
+    <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
+      <p className="text-sm font-semibold text-gray-900">{complete ? 'Update measurements' : 'Your blouse measurements'}</p>
+      <p className="mt-1 text-xs leading-relaxed text-amber-900">Use a soft measuring tape. Follow the guidance below for each point; we will stitch this blouse to the values you provide.</p>
       <div className="mt-2 flex items-center gap-2 text-xs">
         <span className="text-gray-600">Unit:</span>
         {(['INCHES', 'CM'] as const).map((option) => (
@@ -154,8 +155,11 @@ function MeasurementForm({ complete, pending, onSubmit }: { complete: boolean; p
       </div>
       <div className="mt-2 grid grid-cols-2 gap-2">
         {fields.map((field) => (
-          <label key={field.id} className="text-xs text-gray-700" title={field.instructions ?? ''}>
-            {field.label}{field.isRequired ? ' *' : ''}
+          <label key={field.id} className="rounded-lg border border-amber-100 bg-white p-2 text-xs text-gray-700" title={field.instructions ?? ''}>
+            <span className="font-semibold">{field.label}{field.isRequired ? ' *' : ''}</span>
+            {field.exampleImage && <img src={field.exampleImage} alt={`How to measure ${field.label}`} className="mt-2 aspect-square w-full rounded-md object-cover" />}
+            {field.instructions && <span className="mt-1 block leading-relaxed text-gray-500">{field.instructions}</span>}
+            {field.gifOrVideoUrl && <a href={field.gifOrVideoUrl} target="_blank" rel="noreferrer" className="mt-1 inline-block font-semibold text-pink-700 underline">Watch how to measure</a>}
             <input type="number" step="0.1" min="1" max="200" value={values[field.key] ?? ''} onChange={(event) => setValues({ ...values, [field.key]: event.target.value })} className="mt-1 w-full rounded border border-gray-300 bg-white px-2 py-1" />
           </label>
         ))}

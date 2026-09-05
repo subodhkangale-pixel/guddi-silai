@@ -206,5 +206,14 @@ export async function adminUpdateStatus(orderId: string, status: OrderStatus) {
       throw new AppError(409, `Invalid order transition from ${order.status} to ${status}`);
     }
   }
-  return prisma.order.update({ where: { id: orderId }, data: { status } });
+  const updated = await prisma.order.update({ where: { id: orderId }, data: { status } });
+  if (updated.userId) {
+    await notificationsService.createForUser(
+      updated.userId,
+      'Order update',
+      `Your order ${updated.orderNumber} is now ${status.replace(/_/g, ' ').toLowerCase()}.`,
+      'ORDER_STATUS_UPDATED'
+    );
+  }
+  return updated;
 }

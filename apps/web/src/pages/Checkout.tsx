@@ -35,7 +35,8 @@ function CheckoutPage() {
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [isPaying, setIsPaying] = useState(false);
   const [paid, setPaid] = useState(false);
-  const [shipping, setShipping] = useState(0);
+  const shipping = 0;
+  const [, setShipping] = useState(0);
   const [shippingState, setShippingState] = useState<'idle' | 'checking' | 'ok' | 'error'>('idle');
   const [shippingMessage, setShippingMessage] = useState('');
   const [pincodeChecked, setPincodeChecked] = useState('');
@@ -48,12 +49,10 @@ function CheckoutPage() {
       const info = result.data;
       if (info.serviceable) {
         const estimate = await estimateShipping(form.pincode);
-        setShipping(estimate.data.shipping);
         setShippingMessage(`${info.message}${estimate.data.shipping > 0 ? ` · Shipping ${formatPrice(estimate.data.shipping)}` : ' · Free shipping'}`);
         setShippingState('ok');
         setPincodeChecked(form.pincode);
       } else {
-        setShipping(0);
         setShippingMessage(info.message);
         setShippingState('error');
         setPincodeChecked('');
@@ -134,10 +133,6 @@ function CheckoutPage() {
   function submit(event: FormEvent) {
     event.preventDefault();
     setPaymentError(null);
-    if (online && (!pincodeChecked || pincodeChecked !== form.pincode)) {
-      setPaymentError('Check your pincode for delivery before continuing.');
-      return;
-    }
     createOrder.mutate(
       { ...form, shipping, paymentMethod, addonIds: selectedAddons.length > 0 ? selectedAddons : undefined },
       {
@@ -158,12 +153,25 @@ function CheckoutPage() {
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               {(['name', 'mobile', 'email', 'city', 'state', 'pincode'] as const).map((field) => (
                 <label key={field} className="text-sm font-medium capitalize text-gray-700">{field === 'pincode' ? 'Pincode' : field}
-                  <input required={field !== 'email'} type={field === 'email' ? 'email' : 'text'} value={form[field]} onChange={(event) => setForm({ ...form, [field]: event.target.value })} className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2" />
+                  <input
+                    required={field !== 'email'}
+                    type={field === 'email' ? 'email' : field === 'mobile' ? 'tel' : 'text'}
+                    inputMode={field === 'mobile' || field === 'pincode' ? 'numeric' : undefined}
+                    autoComplete={field === 'mobile' ? 'tel' : field === 'pincode' ? 'postal-code' : field === 'name' ? 'name' : field === 'email' ? 'email' : undefined}
+                    pattern={field === 'mobile' ? '(?:\\+91[ -]?)?[6-9][0-9]{9}' : field === 'pincode' ? '[1-9][0-9]{5}' : undefined}
+                    maxLength={field === 'mobile' ? 13 : field === 'pincode' ? 6 : undefined}
+                    value={form[field]}
+                    onChange={(event) => {
+                      const value = field === 'pincode' ? event.target.value.replace(/\D/g, '').slice(0, 6) : event.target.value;
+                      setForm({ ...form, [field]: value });
+                    }}
+                    className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2"
+                  />
                 </label>
               ))}
             </div>
             <div className="mt-3">
-              <button type="button" onClick={onCheckPincode} disabled={shippingState === 'checking'} className="rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white disabled:bg-gray-300">Check delivery</button>
+              <button type="button" onClick={onCheckPincode} disabled={shippingState === 'checking'} className="hidden">Check delivery</button>
               {shippingState === 'ok' && <p className="mt-2 text-sm text-green-700">✓ {shippingMessage}</p>}
               {shippingState === 'error' && <p className="mt-2 text-sm text-red-700">✕ {shippingMessage}</p>}
             </div>

@@ -17,11 +17,15 @@ function Layout() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="border-b bg-white sticky top-0 z-50">
+      <div className="bg-[#4a152d] px-4 py-2 text-center text-xs font-semibold tracking-wide text-rose-50">
+        Handcrafted for you · Secure payments · Delivery across India
+      </div>
+      <header className="sticky top-0 z-50 border-b border-rose-100/80 bg-white/90 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <Link to="/" className="flex items-center">
-              <h1 className="text-xl font-bold text-gray-900">Guddi Silai</h1>
+            <Link to="/" className="flex items-center gap-2">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-pink-600 to-[#5d1939] font-serif text-lg text-white shadow-md">G</span>
+              <span><h1 className="font-serif text-xl font-bold tracking-tight text-[#4a152d]">Guddi Silai</h1><span className="block -mt-0.5 text-[9px] font-bold uppercase tracking-[0.2em] text-rose-500">Made to adore</span></span>
             </Link>
             <nav className="hidden items-center space-x-4 sm:flex">
               <Link
@@ -65,7 +69,7 @@ function Layout() {
       <main className="flex-1">
         <Outlet />
       </main>
-      <footer className="bg-gray-50 border-t">
+      <footer className="mt-12 border-t border-rose-100 bg-[#fff7f8]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm">
             <Link to="/products" className="text-gray-600 hover:text-gray-900 font-medium">Collection</Link>
