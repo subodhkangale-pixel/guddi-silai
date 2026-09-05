@@ -6,6 +6,7 @@ import {
   adminCreateProduct,
   adminDeleteProduct,
   adminDeleteVariant,
+  adminGetProduct,
   adminListProducts,
   adminUploadProductImages,
   adminUpdateVariant,
@@ -70,6 +71,7 @@ function AdminProducts() {
   const [removedVariantIds, setRemovedVariantIds] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [loadingProductId, setLoadingProductId] = useState<string | null>(null);
 
   const categories = useCategories();
   const colors = useColors();
@@ -99,36 +101,44 @@ function AdminProducts() {
     setModalOpen(true);
   }
 
-  function openEdit(product: AdminProduct) {
+  async function openEdit(productId: string) {
     setError(null);
-    setProductId(product.id);
-    setForm({
-      name: product.name,
-      designId: product.designId ?? '',
-      type: product.type,
-      description: product.description ?? '',
-      categoryId: product.categoryId,
-      subCategoryId: product.subCategoryId ?? '',
-      basePrice: String(product.basePrice),
-      images: product.images.join(', '),
-      tags: product.tags.join(', '),
-      colors: product.colors.map((c) => c.id),
-      sizes: product.sizes.map((s) => s.id),
-      fiberIds: product.fiberOptions.map((f) => f.id),
-      embroideryIds: product.embroideryOptions.map((e) => e.id),
-    });
-    setVariants(
-      product.variants.map((v) => ({
-        id: v.id,
-        colorId: v.colorId,
-        sizeId: v.sizeId,
-        sku: v.sku ?? '',
-        price: String(v.price),
-        stock: String(v.stock),
-      }))
-    );
-    setRemovedVariantIds([]);
-    setModalOpen(true);
+    setLoadingProductId(productId);
+    try {
+      const { data: product } = await adminGetProduct(productId);
+      const colors = product.colors as unknown as Array<{ colorId?: string; id?: string }>;
+      const sizes = product.sizes as unknown as Array<{ sizeId?: string; id?: string }>;
+      setProductId(product.id);
+      setForm({
+        name: product.name,
+        designId: product.designId ?? '',
+        type: product.type,
+        description: product.description ?? '',
+        categoryId: product.categoryId,
+        subCategoryId: product.subCategoryId ?? '',
+        basePrice: String(product.basePrice),
+        images: product.images.join(', '),
+        tags: product.tags.join(', '),
+        colors: colors.map((color) => color.colorId ?? color.id).filter((id): id is string => Boolean(id)),
+        sizes: sizes.map((size) => size.sizeId ?? size.id).filter((id): id is string => Boolean(id)),
+        fiberIds: product.fiberOptions.map((fiber) => fiber.id),
+        embroideryIds: product.embroideryOptions.map((embroidery) => embroidery.id),
+      });
+      setVariants(product.variants.map((variant) => ({
+        id: variant.id,
+        colorId: variant.colorId,
+        sizeId: variant.sizeId,
+        sku: variant.sku ?? '',
+        price: String(variant.price),
+        stock: String(variant.stock),
+      })));
+      setRemovedVariantIds([]);
+      setModalOpen(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not load product details');
+    } finally {
+      setLoadingProductId(null);
+    }
   }
 
   function closeModal() {
@@ -309,10 +319,11 @@ function AdminProducts() {
                   <td className="px-4 py-3">{product.totalStock}</td>
                   <td className="px-4 py-3 text-right">
                     <button
-                      onClick={() => openEdit(product)}
+                      onClick={() => void openEdit(product.id)}
+                      disabled={loadingProductId === product.id}
                       className="mr-2 rounded-md border border-gray-300 px-3 py-1 text-xs text-gray-700 hover:bg-gray-50"
                     >
-                      Edit
+                      {loadingProductId === product.id ? 'Loading…' : 'Edit'}
                     </button>
                     <button
                       onClick={() => {
