@@ -8,6 +8,7 @@ import { validateBody } from '../middleware/validate.js';
 import catalogueAdminRouter from '../catalogue/catalogue.admin.routes.js';
 import productsAdminRouter from '../products/products.admin.routes.js';
 import ordersAdminRouter from '../orders/orders.admin.routes.js';
+import inventoryRouter from '../inventory/inventory.routes.js';
 
 const router: Router = Router();
 
@@ -23,5 +24,6 @@ router.get('/auth/me', requireAdmin, me);
 router.use(catalogueAdminRouter);
 router.use('/products', productsAdminRouter);
 router.use(ordersAdminRouter);
+router.use('/inventory', inventoryRouter);
 
 export default router;

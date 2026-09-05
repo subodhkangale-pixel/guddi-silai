@@ -185,8 +185,11 @@ Permissions: `catalogue:read` / `catalogue:write`. All mutations log admin activ
 ## 5. /inventory (R §47–§48)
 
 - **Ready-made**: read stock per (color×size) variant; availability; unavailable combos returned as out-of-stock.
-- **Fiber inventory**: stock/availability per (fiber×color) for the customize flow (§48).
-- Admin: manage both; low-stock alerts (§51) and "Only X left" indicator from real stock (§67).
+- **Fiber inventory**: stock/availability per (fiber×color) for the customize flow (§48), enforced when adding
+  custom items and again at checkout.
+- Admin: `GET/PUT /admin/inventory/fiber` and `PATCH /admin/inventory/variants/:variantId/stock`, protected by
+  `inventory:read` / `inventory:write`; all adjustments create `StockMovement` audit records.
+- Remaining: customer-facing low-stock text and atomic transaction hardening for concurrent checkout.
 
 ---
 

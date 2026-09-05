@@ -5,6 +5,7 @@ vi.mock('../src/lib/prisma.js', () => ({
     cart: { findUnique: vi.fn(), create: vi.fn(), update: vi.fn() },
     product: { findUnique: vi.fn() },
     productVariant: { findUnique: vi.fn() },
+    fiberInventory: { findUnique: vi.fn() },
     color: { findUnique: vi.fn() },
     size: { findUnique: vi.fn() },
   },
@@ -40,6 +41,7 @@ beforeEach(() => {
   prisma.product.findUnique.mockResolvedValue(product);
   prisma.color.findUnique.mockResolvedValue({ name: 'Red' });
   prisma.size.findUnique.mockResolvedValue({ name: 'M' });
+  prisma.fiberInventory.findUnique.mockResolvedValue({ id: 'fi-1', stock: 5 });
   prisma.cart.update.mockImplementation(async ({ data }) => ({ ...cart, ...data }));
 });
 
@@ -65,7 +67,7 @@ describe('cart service', () => {
     });
 
     const result = await cartService.addItem('guest-1', undefined, {
-      productId: 'p1', productType: 'CUSTOMIZE', fiberId: 'f1', quantity: 1,
+      productId: 'p1', productType: 'CUSTOMIZE', fiberId: 'f1', colorId: 'c1', quantity: 1,
     });
 
     expect(result.totalPrice).toBe(1500);

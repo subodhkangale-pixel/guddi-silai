@@ -24,6 +24,14 @@ export async function createOrder(ownerKey: string, input: CreateOrderInput) {
         throw new AppError(409, `${item.productName} is no longer available in that quantity`);
       }
     }
+    if (item.productType === 'CUSTOMIZE' && item.fiberId && item.colorId) {
+      const fiberInventory = await prisma.fiberInventory.findUnique({
+        where: { fiberId_colorId: { fiberId: item.fiberId, colorId: item.colorId } },
+      });
+      if (!fiberInventory || fiberInventory.stock < item.quantity) {
+        throw new AppError(409, `${item.productName} fabric is no longer available in that quantity`);
+      }
+    }
   }
 
   const total = Number(cart.totalPrice.toFixed(2));
@@ -101,6 +109,18 @@ export async function createOrder(ownerKey: string, input: CreateOrderInput) {
       await prisma.productVariant.update({
         where: { id: item.variantId },
         data: { stock: { decrement: item.quantity } },
+      });
+      await prisma.stockMovement.create({
+        data: { variantId: item.variantId, type: 'ORDER', quantity: -item.quantity, referenceId: order.id, reason: 'Order placed' },
+      });
+    }
+    if (item.productType === 'CUSTOMIZE' && item.fiberId && item.colorId) {
+      const fiberInventory = await prisma.fiberInventory.update({
+        where: { fiberId_colorId: { fiberId: item.fiberId, colorId: item.colorId } },
+        data: { stock: { decrement: item.quantity } },
+      });
+      await prisma.stockMovement.create({
+        data: { fiberInventoryId: fiberInventory.id, type: 'ORDER', quantity: -item.quantity, referenceId: order.id, reason: 'Custom order placed' },
       });
     }
   }

@@ -98,9 +98,10 @@
 - [ ] Notifications (customer + admin) (§51)
 
 ## Phase 13 — Inventory (§47–§48)
-- [ ] READY_MADE stock per (color×size) + SKU + out-of-stock combos (§47)
-- [ ] **Fiber inventory** per (fiber×color) for customization (§48)
-- [ ] Decrement on order (+ audit); low-stock alerts (§51); (recommended) "Only X left" indicator (§67)
+- [x] READY_MADE stock per (color×size) + SKU + out-of-stock combos (§47)
+- [x] **Fiber inventory** per (fiber×color) for customization (§48)
+- [x] Decrement on order (+ audit); low-stock query and admin adjustments (§51)
+- [ ] Customer-facing "Only X left" indicator (§67)
 
 ## Phase 14 — Admin Panel (§36–§64)
 - [ ] Analytics dashboard (overview, visitor, user activity, product, customer, cart, funnel, date filter,

@@ -41,6 +41,7 @@ function ProductDetailPage() {
   const [zoom, setZoom] = useState(1);
   const [selectedVariantId, setSelectedVariantId] = useState<string>();
   const [selectedFiberId, setSelectedFiberId] = useState<string>();
+  const [selectedColorId, setSelectedColorId] = useState<string>();
 
   if (isPending) return <Spinner label="Loading product…" />;
   if (isError || !data) {
@@ -63,6 +64,7 @@ function ProductDetailPage() {
       productType: product.type as 'READY_MADE' | 'CUSTOMIZE',
       variantId: product.type === 'READY_MADE' ? selectedVariant?.id : undefined,
       fiberId: product.type === 'CUSTOMIZE' ? selectedFiber?.id : undefined,
+      colorId: product.type === 'CUSTOMIZE' ? selectedColorId : undefined,
     });
   }
 
@@ -222,6 +224,16 @@ function ProductDetailPage() {
           )}
 
           {product.type === 'CUSTOMIZE' && product.fiberOptions.length > 0 && (
+            <>
+            {product.colors.length > 0 && (
+              <label className="mt-6 block text-sm font-medium text-gray-700">
+                Choose fabric color
+                <select value={selectedColorId ?? ''} onChange={(event) => setSelectedColorId(event.target.value)} className="mt-2 block w-full rounded-md border border-gray-300 bg-white px-3 py-2">
+                  <option value="">Select a color</option>
+                  {product.colors.map((color) => <option key={color.id} value={color.id}>{color.name}</option>)}
+                </select>
+              </label>
+            )}
             <label className="mt-6 block text-sm font-medium text-gray-700">
               Choose fabric
               <select
@@ -234,6 +246,7 @@ function ProductDetailPage() {
                 ))}
               </select>
             </label>
+            </>
           )}
 
           <div className="mt-8 flex flex-wrap gap-3">
@@ -259,7 +272,7 @@ function ProductDetailPage() {
               <button
                 type="button"
                 onClick={handleAddToCart}
-                disabled={addToCart.isPending || (product.type === 'READY_MADE' && !selectedVariant) || (product.type === 'CUSTOMIZE' && !selectedFiber)}
+                disabled={addToCart.isPending || (product.type === 'READY_MADE' && !selectedVariant) || (product.type === 'CUSTOMIZE' && (!selectedFiber || (product.colors.length > 0 && !selectedColorId)))}
                 className="rounded-md bg-pink-600 px-6 py-3 text-sm font-medium text-white hover:bg-pink-700 disabled:cursor-not-allowed disabled:bg-gray-300"
               >
                 {addToCart.isPending ? 'Adding…' : 'Add to cart'}

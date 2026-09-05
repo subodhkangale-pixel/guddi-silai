@@ -12,6 +12,7 @@ import AdminLayout from './pages/admin/AdminLayout';
 import CatalogueCrud from './pages/admin/CatalogueCrud';
 import AdminProducts from './pages/admin/AdminProducts';
 import AdminOrders from './pages/admin/AdminOrders';
+import AdminInventory from './pages/admin/AdminInventory';
 
 function App() {
   return (
@@ -32,6 +33,7 @@ function App() {
         <Route index element={<Navigate to="/admin/products" replace />} />
         <Route path="products" element={<AdminProducts />} />
         <Route path="orders" element={<AdminOrders />} />
+        <Route path="inventory" element={<AdminInventory />} />
         <Route path="categories" element={<CatalogueCrud entity="categories" />} />
         <Route path="subcategories" element={<CatalogueCrud entity="subcategories" />} />
         <Route path="colors" element={<CatalogueCrud entity="colors" />} />

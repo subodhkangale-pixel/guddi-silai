@@ -52,8 +52,15 @@ export async function addItem(ownerKey: string, userId: string | undefined, inpu
     sizeId = variant.sizeId;
   } else {
     if (!input.fiberId) throw new AppError(400, 'Choose a fabric before adding to cart');
+    if (!input.colorId) throw new AppError(400, 'Choose a fabric color before adding to cart');
     const fiber = product.fiberOptions.find((option) => option.id === input.fiberId && option.isActive !== false);
     if (!fiber) throw new AppError(400, 'Selected fabric is unavailable');
+    const fiberInventory = await prisma.fiberInventory.findUnique({
+      where: { fiberId_colorId: { fiberId: input.fiberId, colorId: input.colorId } },
+    });
+    if (!fiberInventory || fiberInventory.stock < input.quantity) {
+      throw new AppError(409, 'Selected fabric color is out of stock');
+    }
     fiberId = fiber.id;
     fiberName = fiber.name;
     fiberPrice = fiber.price ?? 0;
@@ -71,6 +78,8 @@ export async function addItem(ownerKey: string, userId: string | undefined, inpu
     (item) =>
       item.productId === product.id &&
       item.variantId === variantId &&
+      item.colorId === colorId &&
+      item.sizeId === sizeId &&
       item.fiberId === fiberId &&
       item.embroideryId === input.embroideryId
   );

@@ -37,6 +37,7 @@ export interface AddCartItemInput {
   productId: string;
   productType: 'READY_MADE' | 'CUSTOMIZE';
   variantId?: string;
+  colorId?: string;
   fiberId?: string;
   quantity?: number;
 }
