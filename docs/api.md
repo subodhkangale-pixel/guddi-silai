@@ -275,7 +275,9 @@ custom fabric selection, measurement completion, stock validation, and server to
 
 - `POST /analytics/events` — ingest the required event set (§76) + `PRODUCT_VIEW_START`/`PRODUCT_VIEW_END` (§77),
   with device/location/traffic embedded.
-- Admin dashboards (Analyst role): overview (§36/§59), visitor (§37), user activity (§38), product (§39),
+- `GET /analytics/summary` — Analyst-role summary of unique visitors, product views, cart adds, wishlist adds,
+  orders, successful payments, searches, and tracked products.
+- Remaining admin dashboards: overview (§36/§59), visitor (§37), user activity (§38), product (§39),
   customer (§40), cart (§41), funnel (§78), date filter (§60), CSV/Excel export (§61).
 
 ---

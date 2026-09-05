@@ -1,10 +1,11 @@
 import { useParams } from 'react-router-dom';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import Spinner from '../components/Spinner';
 import { useAddCartItem, useProduct } from '../api/hooks';
 import { formatPrice } from '../lib/format';
 import { useWishlist } from '../hooks/useWishlist';
+import { trackEvent } from '../api/analyticsApi';
 
 function AvailabilityBadge({
   availability,
@@ -43,6 +44,10 @@ function ProductDetailPage() {
   const [selectedFiberId, setSelectedFiberId] = useState<string>();
   const [selectedColorId, setSelectedColorId] = useState<string>();
 
+  useEffect(() => {
+    if (data?.data) void trackEvent({ type: 'PRODUCT_VIEW', productId: data.data.id });
+  }, [data?.data]);
+
   if (isPending) return <Spinner label="Loading product…" />;
   if (isError || !data) {
     return (
@@ -57,6 +62,7 @@ function ProductDetailPage() {
   const activeSrc = images[activeImage] ?? '';
   const selectedVariant = product.variants.find((variant) => variant.id === selectedVariantId) ?? product.variants[0];
   const selectedFiber = product.fiberOptions.find((fiber) => fiber.id === selectedFiberId) ?? product.fiberOptions[0];
+
 
   function handleAddToCart() {
     addToCart.mutate({

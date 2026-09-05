@@ -104,6 +104,8 @@
 - [ ] Customer-facing "Only X left" indicator (§67)
 
 ## Phase 14 — Admin Panel (§36–§64)
+- [x] Analytics event summary dashboard foundation (visitors, product views, cart adds, wishlist adds, orders,
+        payments, searches, tracked products)
 - [ ] Analytics dashboard (overview, visitor, user activity, product, customer, cart, funnel, date filter,
         charts, CSV/Excel export) (§36–§41, §59–§61)
 - [ ] Product/category/inventory (incl. fiber)/orders/coupons/offers/reviews/enquiries/notifications management
@@ -114,7 +116,7 @@
 - [ ] Coupons (§49) + Offers/product-category-festival discounts (§50)
 
 ## Phase 16 — Analytics Events (§76–§78)
-- [ ] Event ingestion for the full required set + product view start/end
+- [x] Event ingestion for the required event set + product view start/end
 - [ ] View-time, unique views, zoom/wishlist/cart counts, funnel, cart abandonment (§77–§78)
 - [ ] Optional GA4 feed (§82)
 
