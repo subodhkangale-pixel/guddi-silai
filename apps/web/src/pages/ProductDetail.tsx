@@ -356,7 +356,7 @@ function ProductDetailPage() {
             <button
               type="button"
               onClick={() => wishlist.toggle(product)}
-              className="rounded-md border border-gray-300 px-5 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              className={`rounded-md border px-5 py-3 text-sm font-medium transition ${wishlist.isSaved(product.id) ? 'border-pink-200 bg-pink-50 text-pink-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
             >
               {wishlist.isSaved(product.id) ? '♥ Saved' : '♡ Save'}
             </button>
@@ -375,7 +375,7 @@ function ProductDetailPage() {
               <button
                 type="button"
                 onClick={handleAddToCart}
-                disabled={addToCart.isPending || (product.type === 'READY_MADE' && !selectedVariant) || (product.type === 'CUSTOMIZE' && (!selectedFiber || (product.colors.length > 0 && !selectedColorId))) || fabricUnavailable}
+                disabled={addToCart.isPending || (product.type === 'READY_MADE' && (!selectedVariant || selectedVariant.stock <= 0)) || (product.type === 'CUSTOMIZE' && (!selectedFiber || (product.colors.length > 0 && !selectedColorId))) || fabricUnavailable}
                 className="rounded-md bg-pink-600 px-6 py-3 text-sm font-medium text-white hover:bg-pink-700 disabled:cursor-not-allowed disabled:bg-gray-300"
               >
                 {addToCart.isPending ? 'Adding…' : 'Add to cart'}
