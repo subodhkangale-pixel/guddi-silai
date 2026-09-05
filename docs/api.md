@@ -206,7 +206,7 @@ Permissions: `catalogue:read` / `catalogue:write`. All mutations log admin activ
 
 ## 7. /wishlist (R §26)
 
-- Authenticated: `GET/POST/DELETE /wishlist` (DB-backed).
+- Authenticated: `GET/POST/DELETE /wishlist` (DB-backed) is implemented with ownership enforced by `requireAuth`.
 - Guest: **browser-local** (no server API).
 - Wishlist display data (image/name/price/availability) served via `/products` as needed; "Move to Cart" supported.
 

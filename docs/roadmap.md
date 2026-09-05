@@ -54,7 +54,7 @@
 
 ## Phase 6 — Wishlist (§26)
 - [x] Guest wishlist → browser-local storage
-- [ ] Authenticated wishlist → database
+- [x] Authenticated wishlist → database API
 - [ ] Wishlist page (image/name/price/availability, Move to Cart, Remove) — local saved designs are available; Move to Cart remains pending
 
 ## Phase 7 — Cart (§27–§28)
