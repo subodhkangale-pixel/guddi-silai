@@ -48,6 +48,36 @@ function ProductDetailPage() {
     if (data?.data) void trackEvent({ type: 'PRODUCT_VIEW', productId: data.data.id });
   }, [data?.data]);
 
+  useEffect(() => {
+    if (!data?.data) return;
+    const product = data.data;
+    const previousTitle = document.title;
+    document.title = `${product.name} | Guddi Silai`;
+    const description = product.description ?? `${product.name} by Guddi Silai. Design ${product.designId ?? ''}`;
+    let descriptionTag = document.querySelector('meta[name="description"]');
+    if (!descriptionTag) {
+      descriptionTag = document.createElement('meta');
+      descriptionTag.setAttribute('name', 'description');
+      document.head.appendChild(descriptionTag);
+    }
+    descriptionTag.setAttribute('content', description);
+    let canonical = document.querySelector('link[rel="canonical"]');
+    if (!canonical) {
+      canonical = document.createElement('link');
+      canonical.setAttribute('rel', 'canonical');
+      document.head.appendChild(canonical);
+    }
+    canonical.setAttribute('href', window.location.href);
+    const structuredData = document.createElement('script');
+    structuredData.type = 'application/ld+json';
+    structuredData.textContent = JSON.stringify({ '@context': 'https://schema.org', '@type': 'Product', name: product.name, sku: product.designId ?? product.id, description, image: product.images, offers: { '@type': 'Offer', priceCurrency: 'INR', price: product.finalPrice, availability: product.availability === 'in_stock' ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock' } });
+    document.head.appendChild(structuredData);
+    return () => {
+      document.title = previousTitle;
+      structuredData.remove();
+    };
+  }, [data?.data]);
+
   if (isPending) return <Spinner label="Loading product…" />;
   if (isError || !data) {
     return (

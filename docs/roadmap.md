@@ -46,11 +46,11 @@
 
 ## Phase 5 — Product Details
 - [x] Product gallery with thumbnails (§7)
-- [ ] Mobile-style image zoom (pinch/double-tap/drag; desktop wheel/buttons) (§8)
+- [x] Desktop image zoom controls and wheel zoom; mobile pinch/double-tap remains pending (§8)
 - [x] Detail info incl. design ID, price/discount/final, availability, fabric, embroidery, color, size,
         stitching, care (§9)
 - [x] Like, Add to Cart, WhatsApp Enquiry, Share (§9) — capability-driven per type (§46/§83)
-- [ ] SEO metadata + structured data + social preview (§57–§58)
+- [x] Product title, description, canonical URL, and Product structured data (§57–§58)
 
 ## Phase 6 — Wishlist (§26)
 - [x] Guest wishlist → browser-local storage
@@ -102,7 +102,7 @@
 - [x] READY_MADE stock per (color×size) + SKU + out-of-stock combos (§47)
 - [x] **Fiber inventory** per (fiber×color) for customization (§48)
 - [x] Decrement on order (+ audit); low-stock query and admin adjustments (§51)
-- [ ] Customer-facing "Only X left" indicator (§67)
+- [x] Customer-facing "Only X left" indicator from real stock (§67)
 
 ## Phase 14 — Admin Panel (§36–§64)
 - [x] Analytics event summary dashboard foundation (visitors, product views, cart adds, wishlist adds, orders,
@@ -123,7 +123,8 @@
 - [ ] Optional GA4 feed (§82)
 
 ## Phase 17 — SEO / Performance (§56–§58)
-- [ ] SEO metadata, canonical unique URLs, structured data, sitemap, robots, OG/social previews
+- [x] Product SEO metadata, canonical URLs, and structured data
+- [ ] Sitemap, robots, OG/social previews
 - [ ] Performance: WebP/AVIF, CDN, lazy loading, responsive images, compression, browser caching
 - [ ] (O) prerender/SSR decision for crawlability
 
