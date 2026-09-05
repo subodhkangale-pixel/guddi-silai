@@ -10,7 +10,7 @@ export function lookupPincode(pincode: string) {
     pincode,
     serviceable,
     deliveryDays: estimateDays,
-    message: serviceable ? `Deliverable in ${estimateDays} business days` : 'Sorry, we do not deliver to this pincode yet',
+    message: serviceable ? 'Delivery is available for this PIN code.' : 'Sorry, we do not deliver to this PIN code yet.',
   };
 }
 
