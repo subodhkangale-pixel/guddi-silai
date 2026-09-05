@@ -8,6 +8,34 @@ function cartSubtotal(items: { unitPrice: number; quantity: number }[]) {
   return Number(items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0).toFixed(2));
 }
 
+async function computeOfferDiscount(items: { unitPrice: number; quantity: number; productId: string }[]): Promise<number> {
+  const subtotal = cartSubtotal(items);
+  const now = new Date();
+  const productIds = items.map((item) => item.productId).filter(Boolean);
+  if (productIds.length === 0) return 0;
+
+  const products = await prisma.product.findMany({ where: { id: { in: productIds } }, select: { id: true, categoryId: true } });
+  const offers = await prisma.offer.findMany({
+    where: {
+      isActive: true,
+      OR: [{ startDate: null }, { startDate: { lte: now } }],
+      AND: [{ OR: [{ endDate: null }, { endDate: { gte: now } }] }],
+    },
+  });
+
+  let discount = 0;
+  for (const offer of offers) {
+    let applies = false;
+    if (offer.applicableProductIds.length > 0 && productIds.some((id) => offer.applicableProductIds.includes(id))) applies = true;
+    if (offer.applicableCategoryIds.length > 0 && products.some((product) => offer.applicableCategoryIds.includes(product.categoryId))) applies = true;
+    if (offer.applicableProductIds.length === 0 && offer.applicableCategoryIds.length === 0) applies = true;
+    if (!applies) continue;
+    const value = offer.type === 'PERCENT' ? subtotal * offer.value / 100 : offer.value;
+    discount += value;
+  }
+  return Number(Math.min(discount, subtotal).toFixed(2));
+}
+
 export async function applyCoupon(ownerKey: string, input: ApplyCouponInput) {
   const cart = await prisma.cart.findUnique({ where: { ownerKey } });
   if (!cart || cart.items.length === 0) throw new AppError(400, 'Your cart is empty');
@@ -28,19 +56,30 @@ export async function applyCoupon(ownerKey: string, input: ApplyCouponInput) {
   }
 
   const rawDiscount = coupon.type === CouponType.PERCENT ? subtotal * coupon.value / 100 : coupon.value;
-  const discount = Number(Math.min(rawDiscount, coupon.maxDiscount ?? rawDiscount, subtotal).toFixed(2));
+  const couponDiscount = Number(Math.min(rawDiscount, coupon.maxDiscount ?? rawDiscount, subtotal).toFixed(2));
+  const offerDiscount = await computeOfferDiscount(cart.items);
+  const totalDiscount = Number(Math.min(couponDiscount + offerDiscount, subtotal).toFixed(2));
   const updated = await prisma.cart.update({
     where: { id: cart.id },
-    data: { couponCode: coupon.code, discount, totalPrice: Number((subtotal - discount).toFixed(2)) },
+    data: {
+      couponCode: coupon.code,
+      discount: totalDiscount,
+      offerDiscount,
+      totalPrice: Number((subtotal - totalDiscount).toFixed(2)),
+    },
   });
-  return { cart: updated, discount };
+  return { cart: updated, discount: totalDiscount };
 }
 
 export async function removeCoupon(ownerKey: string) {
   const cart = await prisma.cart.findUnique({ where: { ownerKey } });
   if (!cart) throw new AppError(404, 'Cart not found');
   const subtotal = cartSubtotal(cart.items);
-  return prisma.cart.update({ where: { id: cart.id }, data: { couponCode: null, discount: 0, totalPrice: subtotal } });
+  const offerDiscount = await computeOfferDiscount(cart.items);
+  return prisma.cart.update({
+    where: { id: cart.id },
+    data: { couponCode: null, discount: offerDiscount, offerDiscount, totalPrice: Number((subtotal - offerDiscount).toFixed(2)) },
+  });
 }
 
 export async function adminList() {

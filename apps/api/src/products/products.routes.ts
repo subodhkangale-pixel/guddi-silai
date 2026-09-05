@@ -8,5 +8,6 @@ const router: Router = Router();
 
 router.get('/', validateQuery(productQuerySchema), productsController.listProducts);
 router.get('/:slug', productsController.getProductBySlug);
+router.get('/fiber/:productId/availability', productsController.getFiberAvailability);
 
 export default router;

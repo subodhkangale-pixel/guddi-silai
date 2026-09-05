@@ -37,31 +37,44 @@ export async function createOrder(ownerKey: string, input: CreateOrderInput) {
   }
 
   const subtotal = Number(cart.items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0).toFixed(2));
+  const couponDiscount = Number((cart.couponCode ? (cart.discount ?? 0) : 0).toFixed(2));
   const discount = Number((cart.discount ?? 0).toFixed(2));
   const total = Number(cart.totalPrice.toFixed(2));
   const coupon = cart.couponCode ? await prisma.coupon.findUnique({ where: { code: cart.couponCode } }) : null;
+
+  const offerApplied = (cart.offerDiscount ?? 0) > 0;
+  const offer: { name: string; type: string; discount: number } | null = offerApplied
+    ? { name: 'Auto-applied offer', type: 'AUTO', discount: Number((cart.offerDiscount ?? 0).toFixed(2)) }
+    : null;
+
+  const fields = await prisma.measurementField.findMany({
+    where: { isActive: true },
+    select: { key: true, id: true },
+  });
+  const fieldByKey = new Map(fields.map((field) => [field.key, field.id]));
   const measurementSnapshotFor = (item: (typeof cart.items)[number]) => {
     if (item.productType !== 'CUSTOMIZE' || !Array.isArray(item.measurementValues)) return null;
+    const values = item.measurementValues as { fieldKey: string; label: string; value: number; unit: string }[];
     return {
-      values: item.measurementValues.map((value) => {
-        const measurement = value as {
-          fieldKey: string;
-          label: string;
-          value: number;
-          unit: string;
-        };
-        return {
-          fieldId: measurement.fieldKey,
-          fieldKey: measurement.fieldKey,
-          label: measurement.label,
-          value: measurement.value,
-          unit: measurement.unit,
-        };
-      }),
+      values: values.map((measurement) => ({
+        fieldId: fieldByKey.get(measurement.fieldKey) ?? measurement.fieldKey,
+        fieldKey: measurement.fieldKey,
+        label: measurement.label,
+        value: measurement.value,
+        unit: measurement.unit,
+      })),
       measurementInstructionVersion: 1,
       sourceProfileId: null,
     };
   };
+
+  const paymentMethod = input.paymentMethod as string;
+  const storedMethod =
+    paymentMethod === 'COD' ? PaymentMethod.COD
+    : paymentMethod === 'UPI' ? PaymentMethod.UPI
+    : paymentMethod === 'NET_BANKING' ? PaymentMethod.NET_BANKING
+    : PaymentMethod.RAZORPAY;
+
   const order = await prisma.order.create({
     data: {
       orderNumber: orderNumber(),
@@ -94,18 +107,19 @@ export async function createOrder(ownerKey: string, input: CreateOrderInput) {
         total: Number((item.unitPrice * item.quantity).toFixed(2)),
       })),
       payment: {
-        method: input.paymentMethod === 'RAZORPAY' ? PaymentMethod.RAZORPAY : PaymentMethod.COD,
+        method: storedMethod,
         status: PaymentStatus.PENDING,
         transactionId: null,
-        amount: total,
+        amount: Number((total + (input.shipping ?? 0)).toFixed(2)),
         paidAt: null,
       },
-      coupon: coupon ? { code: coupon.code, type: coupon.type, discount } : null,
+      coupon: coupon ? { code: coupon.code, type: coupon.type, discount: couponDiscount } : null,
+      offer: offer,
       subtotal,
       discount,
-      shipping: 0,
+      shipping: input.shipping ?? 0,
       tax: 0,
-      total,
+      total: Number((total + (input.shipping ?? 0)).toFixed(2)),
       notes: input.notes,
     },
   });

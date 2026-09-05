@@ -10,7 +10,8 @@ export interface CreateOrderInput {
   state: string;
   pincode: string;
   notes?: string;
-  paymentMethod: 'COD' | 'RAZORPAY';
+  shipping?: number;
+  paymentMethod: 'COD' | 'UPI' | 'NET_BANKING' | 'RAZORPAY';
 }
 
 export interface OrderResult {

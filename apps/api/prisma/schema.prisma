@@ -482,6 +482,7 @@ model Cart {
   totalPrice Float     @default(0)
   couponCode String?
   discount   Float      @default(0)
+  offerDiscount Float   @default(0)
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
 

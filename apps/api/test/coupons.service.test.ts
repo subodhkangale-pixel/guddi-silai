@@ -5,6 +5,7 @@ vi.mock('../src/lib/prisma.js', () => ({
     cart: { findUnique: vi.fn(), update: vi.fn() },
     coupon: { findUnique: vi.fn() },
     product: { findMany: vi.fn() },
+    offer: { findMany: vi.fn() },
   },
 }));
 
@@ -16,6 +17,7 @@ beforeEach(() => {
   prisma.cart.findUnique.mockResolvedValue({ id: 'c1', items: [{ productId: 'p1', unitPrice: 1000, quantity: 2 }], totalPrice: 2000 });
   prisma.coupon.findUnique.mockResolvedValue({ code: 'WELCOME10', type: 'PERCENT', value: 10, maxDiscount: null, minOrderAmount: null, usageLimit: null, usedCount: 0, isActive: true, expiresAt: null, applicableCategoryIds: [], applicableProductIds: [] });
   prisma.product.findMany.mockResolvedValue([{ id: 'p1', categoryId: 'cat-1' }]);
+  prisma.offer.findMany.mockResolvedValue([]);
   prisma.cart.update.mockImplementation(async ({ data }) => ({ id: 'c1', ...data }));
 });
 

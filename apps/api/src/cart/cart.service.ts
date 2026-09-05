@@ -5,11 +5,37 @@ import { AppError } from '../middleware/errorHandler.js';
 import { CartItemInput, UpdateCartItemInput } from './cart.schemas.js';
 import { MeasurementInput } from './measurement.schemas.js';
 
+function sectionTotals(items: CartItem[]) {
+  const ready = items.filter((item) => item.productType === 'READY_MADE');
+  const custom = items.filter((item) => item.productType === 'CUSTOMIZE');
+  const sum = (list: CartItem[]) =>
+    Number(list.reduce((acc, item) => acc + item.unitPrice * item.quantity, 0).toFixed(2));
+  return {
+    readyMade: { count: ready.length, quantity: sumItems(ready), subtotal: sum(ready) },
+    customize: { count: custom.length, quantity: sumItems(custom), subtotal: sum(custom) },
+  };
+}
+
+function sumItems(items: CartItem[]) {
+  return items.reduce((sum, item) => sum + item.quantity, 0);
+}
+
 function totals(items: CartItem[]) {
   return {
     totalItems: items.reduce((sum, item) => sum + item.quantity, 0),
     totalPrice: Number(
       items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0).toFixed(2)
+    ),
+  };
+}
+
+export function buildSections(items: CartItem[]) {
+  const sections = sectionTotals(items);
+  return {
+    readyMade: sections.readyMade,
+    customize: sections.customize,
+    measurementPending: items.some(
+      (item) => item.productType === 'CUSTOMIZE' && item.measurementStatus !== 'COMPLETE'
     ),
   };
 }
@@ -23,7 +49,8 @@ async function getOrCreateCart(ownerKey: string, userId?: string) {
 }
 
 export async function getCart(ownerKey: string) {
-  return getOrCreateCart(ownerKey, ownerKey);
+  const cart = await getOrCreateCart(ownerKey, ownerKey);
+  return { ...cart, sections: buildSections(cart.items) };
 }
 
 export async function addItem(ownerKey: string, userId: string | undefined, input: CartItemInput) {
@@ -131,7 +158,7 @@ export async function addItem(ownerKey: string, userId: string | undefined, inpu
   const summary = totals(items);
   return prisma.cart.update({
     where: { id: cart.id },
-    data: { items, ...summary, couponCode: null, discount: 0, userId: userId ?? cart.userId },
+    data: { items, ...summary, couponCode: null, discount: 0, offerDiscount: 0, userId: userId ?? cart.userId },
   });
 }
 
@@ -141,7 +168,7 @@ export async function updateItem(ownerKey: string, index: number, input: UpdateC
   const items = [...cart.items];
   if (input.quantity === 0) items.splice(index, 1);
   else items[index] = { ...items[index], quantity: input.quantity };
-  return prisma.cart.update({ where: { id: cart.id }, data: { items, ...totals(items), couponCode: null, discount: 0 } });
+  return prisma.cart.update({ where: { id: cart.id }, data: { items, ...totals(items), couponCode: null, discount: 0, offerDiscount: 0 } });
 }
 
 export async function removeItem(ownerKey: string, index: number) {
@@ -154,11 +181,33 @@ export async function updateMeasurements(ownerKey: string, index: number, input:
   if (cart.items[index].productType !== 'CUSTOMIZE') {
     throw new AppError(400, 'Measurements are only required for custom items');
   }
+  const fields = await prisma.measurementField.findMany({
+    where: { isActive: true },
+    select: { id: true, key: true, label: true, isRequired: true },
+  });
+  const fieldByKey = new Map(fields.map((field) => [field.key, field]));
+  const required = fields.filter((field) => field.isRequired).map((field) => field.key);
+  const provided = new Set(input.values.map((value) => value.fieldKey));
+  if (input.values.length === 0) throw new AppError(400, 'Provide at least one measurement');
+  const missing = required.filter((key) => !provided.has(key));
+  if (missing.length > 0) throw new AppError(400, `Missing required measurements: ${missing.join(', ')}`);
+
+  const snapshot = input.values.map((value) => {
+    const field = fieldByKey.get(value.fieldKey) ?? { id: value.fieldId, label: value.label };
+    return {
+      fieldId: value.fieldId ?? field.id ?? value.fieldKey,
+      fieldKey: value.fieldKey,
+      label: value.label,
+      value: value.value,
+      unit: value.unit,
+    };
+  });
+
   const items = [...cart.items];
   items[index] = {
     ...items[index],
     measurementStatus: 'COMPLETE',
-    measurementValues: input.values,
+    measurementValues: snapshot,
   };
   return prisma.cart.update({ where: { id: cart.id }, data: { items } });
 }
@@ -166,5 +215,5 @@ export async function updateMeasurements(ownerKey: string, index: number, input:
 export async function clearCart(ownerKey: string) {
   const cart = await prisma.cart.findUnique({ where: { ownerKey } });
   if (!cart) return getCart(ownerKey);
-  return prisma.cart.update({ where: { id: cart.id }, data: { items: [], totalItems: 0, totalPrice: 0, couponCode: null, discount: 0 } });
+  return prisma.cart.update({ where: { id: cart.id }, data: { items: [], totalItems: 0, totalPrice: 0, couponCode: null, discount: 0, offerDiscount: 0 } });
 }

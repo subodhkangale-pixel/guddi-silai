@@ -58,34 +58,35 @@
 - [ ] Wishlist page (image/name/price/availability, Move to Cart, Remove) — local saved designs are available; Move to Cart remains pending
 
 ## Phase 7 — Cart (§27–§28)
-- [ ] Two separated sections: Ready-to-Buy | Customize-with-Measurement
-- [ ] Mixed cart (ready + custom), measurement status (✓/⚠), Complete Measurement button
-- [ ] Server-authoritative prices/discounts/inventory/totals; split order summary
-- [ ] Guest + auth cart + merge
+- [x] Two separated sections: Ready-to-Buy | Customize-with-Measurement
+- [x] Mixed cart (ready + custom), measurement status (✓/⚠), Complete Measurement button
+- [x] Server-authoritative prices/discounts/inventory/totals; split order summary
+- [x] Guest + auth cart + merge
+- [x] Auto-applied offer discount folded into cart totals
 
 ## Phase 8 — Customization (§13–§17)
-- [ ] Fiber selection popup (list + price) + filters (color/fiber/embroidery) + visual swatches (§14–§16)
-- [ ] Customize flow: design confirm → fiber → measurement → order summary (§17)
-- [ ] Fiber inventory check for availability (§48)
-- [ ] Customization price (fiber price + ...) — **pending price-formula Open Question #1**
+- [x] Fiber selection popup (list + price) + filters (color/fiber/embroidery) + visual swatches (§14–§16)
+- [x] Customize flow: design confirm → fiber → measurement → order summary (§17)
+- [x] Fiber inventory check for availability (§48)
+- [x] Customization price (base + fiber price + embroidery surcharge)
 
 ## Phase 9 — Measurements (§18–§23, §74)
-- [ ] Admin-configurable fields + instructions + example image + GIF/video + unit (§19–§21)
-- [ ] Measurement validation (§22) + inches/cm + auto-conversion (§21)
-- [ ] Save My Measurements (auth) / temp for guests (§23)
+- [x] Admin-configurable fields + instructions + example image + GIF/video + unit (§19–§21)
+- [x] Measurement validation (§22) + inches/cm + auto-conversion (§21)
+- [x] Save My Measurements (auth) / temp for guests (§23)
 - [ ] Measurement recheck + confirm before payment (§74, recommended)
-- [ ] Order-time measurement snapshot + instruction version (§44)
+- [x] Order-time measurement snapshot + instruction version (§44)
 
 ## Phase 10 — Checkout (§29)
 - [x] Simple checkout (name, mobile, email-optional, address, city, state, pincode) — guest allowed
-- [ ] Order summary split; (recommended) Pincode check, Order Notes
+- [x] Order summary split; (recommended) Pincode check, Order Notes
 
 ## Phase 11 — Payments (§82, §63) — **DECISION: Razorpay (ADR 017)**
 - [x] India-focused gateway — **Razorpay chosen** for a small-business/startup budget (₹0 setup/AMC, pay-per-transaction
         ~2% + GST, T+2). Already integrated in `apps/api/src/payments` (order create/verify/webhook, HMAC-verified, idempotent)
 - [x] Create/verify/webhook (signature-verified, idempotent)
 - [x] Payment method/status/transaction ID on order (§43)
-- [ ] UPI-first checkout (UPI = 0% TDR per RBI → keeps blended cost ~0.6–1%) + **COD toggle** for trust
+- [x] UPI-first checkout (UPI = 0% TDR per RBI → keeps blended cost ~0.6–1%) + **COD toggle** for trust
 - [ ] (Deferred until COD volume grows) **GoKwik Smart COD / KwikCheckout** for RTO protection; **Cashfree**
         (~1.6–1.9%, T+1) documented as fallback gateway; **Instamojo links** for WhatsApp-driven sales
 
