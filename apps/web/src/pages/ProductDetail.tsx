@@ -398,7 +398,7 @@ function ProductDetailPage() {
               Back to Collection
             </a>
           </div>
-          {addToCart.isSuccess && <p className="mt-3 text-sm text-green-700">Added to your cart.</p>}
+          {addToCart.isSuccess && <p className="mt-3 text-sm text-green-700">Added to your cart. <Link to="/cart" className="font-semibold underline">View cart</Link></p>}
           {addToCart.isError && <p className="mt-3 text-sm text-red-700">Could not add this item. Please check the selected option.</p>}
         </div>
       </div>

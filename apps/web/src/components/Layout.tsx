@@ -1,9 +1,11 @@
 import { Link, Outlet, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../auth/AuthContext';
+import { useWishlist } from '../hooks/useWishlist';
 
 function Layout() {
   const { user, status, logout } = useAuth();
+  const wishlist = useWishlist();
   const navigate = useNavigate();
 
   function handleSignOut() {
@@ -31,6 +33,10 @@ function Layout() {
               >
                 Products
               </Link>
+              <Link to="/wishlist" className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
+                Wishlist{wishlist.items.length > 0 ? ` (${wishlist.items.length})` : ''}
+              </Link>
+              <Link to="/cart" className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Cart</Link>
               <Link to="/notifications" className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Notifications</Link>
               {status === 'authenticated' && user ? (
                 <span className="flex items-center gap-3">
