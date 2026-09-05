@@ -8,7 +8,6 @@ import { useAddCartItem, useFiberAvailability, useProduct } from '../api/hooks';
 import { formatPrice } from '../lib/format';
 import { useWishlist } from '../hooks/useWishlist';
 import { trackEvent } from '../api/analyticsApi';
-import { checkPincode } from '../api/deliveryApi';
 
 const STYLE_OPTION_PRESETS: { key: 'neckline' | 'sleeveStyle' | 'backDesign' | 'embroideryPlacement' | 'fitting'; label: string; options: string[] }[] = [
   { key: 'neckline', label: 'Neckline', options: ['Round neck', 'V-neck', 'Sweetheart', 'Boat neck', 'Square', 'High neck', 'Collared'] },
@@ -56,9 +55,6 @@ function ProductDetailPage() {
   const [selectedColorId, setSelectedColorId] = useState<string>();
   const [selectedEmbroideryId, setSelectedEmbroideryId] = useState<string>();
   const [styleOptions, setStyleOptions] = useState<{ neckline?: string; sleeveStyle?: string; backDesign?: string; embroideryPlacement?: string; fitting?: string }>({});
-  const [pincode, setPincode] = useState('');
-  const [deliveryState, setDeliveryState] = useState<'idle' | 'checking' | 'available' | 'unavailable'>('idle');
-  const [deliveryMessage, setDeliveryMessage] = useState('');
   const productIdForAvailability = data?.data?.type === 'CUSTOMIZE' ? data.data.id : undefined;
   const fiberAvailabilityQuery = useFiberAvailability(productIdForAvailability);
 
@@ -128,25 +124,6 @@ function ProductDetailPage() {
       embroideryId: product.type === 'CUSTOMIZE' ? selectedEmbroidery?.id : undefined,
       styleOptions: Object.keys(styleOptions).length > 0 ? styleOptions : undefined,
     });
-  }
-
-  async function handleDeliveryCheck() {
-    const cleanedPincode = pincode.trim();
-    if (!/^\d{6}$/.test(cleanedPincode)) {
-      setDeliveryState('unavailable');
-      setDeliveryMessage('Enter a valid 6-digit PIN code.');
-      return;
-    }
-
-    setDeliveryState('checking');
-    try {
-      const result = await checkPincode(cleanedPincode);
-      setDeliveryState(result.data.serviceable ? 'available' : 'unavailable');
-      setDeliveryMessage(result.data.message);
-    } catch (error) {
-      setDeliveryState('unavailable');
-      setDeliveryMessage(error instanceof Error ? error.message : 'Could not check delivery right now.');
-    }
   }
 
   return (
@@ -229,34 +206,6 @@ function ProductDetailPage() {
           {product.description && (
             <p className="mt-4 text-gray-700 leading-relaxed">{product.description}</p>
           )}
-
-          <section className="mt-6 rounded-lg border border-gray-200 bg-gray-50 p-4" aria-labelledby="delivery-heading">
-            <div className="flex items-start gap-3">
-              <span aria-hidden="true" className="mt-0.5 text-lg">⌖</span>
-              <div className="min-w-0 flex-1">
-                <h2 id="delivery-heading" className="font-semibold text-gray-900">Check delivery availability</h2>
-                <p className="mt-0.5 text-sm text-gray-600">Enter your PIN code to see whether this design can be delivered to you.</p>
-                <div className="mt-3 flex gap-2">
-                  <input
-                    value={pincode}
-                    onChange={(event) => {
-                      setPincode(event.target.value.replace(/\D/g, '').slice(0, 6));
-                      setDeliveryState('idle');
-                    }}
-                    inputMode="numeric"
-                    autoComplete="postal-code"
-                    placeholder="Enter PIN code"
-                    aria-label="Delivery PIN code"
-                    className="min-w-0 flex-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none ring-pink-500 focus:ring-2"
-                  />
-                  <button type="button" onClick={() => void handleDeliveryCheck()} disabled={deliveryState === 'checking'} className="rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 disabled:bg-gray-400">
-                    {deliveryState === 'checking' ? 'Checking…' : 'Check'}
-                  </button>
-                </div>
-                {deliveryState !== 'idle' && <p className={`mt-2 text-sm ${deliveryState === 'available' ? 'text-green-700' : deliveryState === 'checking' ? 'text-gray-600' : 'text-red-700'}`}>{deliveryMessage}</p>}
-              </div>
-            </div>
-          </section>
 
           <div className="mt-6 space-y-4 border-t border-gray-200 pt-6">
             <DetailRow label="Category" value={product.category?.name ?? '—'} />
@@ -449,7 +398,7 @@ function ProductDetailPage() {
               Back to Collection
             </a>
           </div>
-          {addToCart.isSuccess && <p className="mt-3 text-sm text-green-700">Added to your cart. <Link to="/cart" className="font-semibold underline">View cart</Link></p>}
+          {addToCart.isSuccess && <p className="mt-3 text-sm text-green-700">Added to your cart. <Link to="/cart" className="font-semibold underline">{product.type === 'CUSTOMIZE' ? 'Add your measurements in cart' : 'View cart'}</Link></p>}
           {addToCart.isError && <p className="mt-3 text-sm text-red-700">Could not add this item. Please check the selected option.</p>}
         </div>
       </div>
