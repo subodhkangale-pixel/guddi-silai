@@ -134,7 +134,7 @@ function CheckoutPage() {
   function submit(event: FormEvent) {
     event.preventDefault();
     setPaymentError(null);
-    if (online && (!pincodeChecked || pincodeChecked !== form.pincode)) {
+    if (!pincodeChecked || pincodeChecked !== form.pincode) {
       setPaymentError('Check your pincode for delivery before continuing.');
       return;
     }
