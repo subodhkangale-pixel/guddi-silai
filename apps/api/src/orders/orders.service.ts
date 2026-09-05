@@ -3,6 +3,7 @@ import { OrderStatus, PaymentMethod, PaymentStatus } from '@prisma/client';
 import { prisma } from '../lib/prisma.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { CreateOrderInput } from './orders.schemas.js';
+import * as notificationsService from '../notifications/notifications.service.js';
 
 function orderNumber() {
   const stamp = Date.now().toString(36).toUpperCase();
@@ -130,6 +131,10 @@ export async function createOrder(ownerKey: string, input: CreateOrderInput) {
   }
   await prisma.cart.update({ where: { id: cart.id }, data: { items: [], totalItems: 0, totalPrice: 0 } });
   if (coupon) await prisma.coupon.update({ where: { id: coupon.id }, data: { usedCount: { increment: 1 } } });
+  if (ownerKey) {
+    await notificationsService.createForUser(ownerKey, 'Order placed', `Your order ${order.orderNumber} has been placed.`, 'ORDER_PLACED');
+    await notificationsService.createForAdmins('New order received', `Order ${order.orderNumber} is ready for review.`, 'NEW_ORDER');
+  }
 
   return order;
 }

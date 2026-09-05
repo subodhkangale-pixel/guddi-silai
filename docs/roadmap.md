@@ -95,7 +95,8 @@
 - [ ] My Orders (order id, date, products, amount, payment status, order status)
 - [ ] Admin order management + filters + custom-order detail (measurements + version)
 - [ ] Order snapshots (embedded item + measurement snapshots)
-- [ ] Notifications (customer + admin) (§51)
+- [x] In-app notifications on order placement for customer and active admins (§51)
+- [ ] Notifications for every status transition and external delivery channels (§51)
 
 ## Phase 13 — Inventory (§47–§48)
 - [x] READY_MADE stock per (color×size) + SKU + out-of-stock combos (§47)

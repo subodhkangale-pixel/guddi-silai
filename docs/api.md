@@ -287,9 +287,9 @@ custom fabric selection, measurement completion, stock validation, and server to
 
 ## 15. /notifications (R §51)
 
-- Send customer notifications (order placed/confirmed/stitching started/shipped/delivered) and admin
-  notifications (new order, new customer, payment received, low stock, new enquiry). Transport is an open detail
-  (see Open Questions).
+- `GET /notifications` and `PATCH /notifications/:id/read` provide authenticated in-app notifications.
+- Order placement creates a customer notification and fan-outs a new-order notification to active admins.
+- Remaining: every status-transition event, low-stock/payment notifications, and external delivery channels.
 
 ---
 
