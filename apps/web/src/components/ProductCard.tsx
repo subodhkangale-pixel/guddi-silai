@@ -19,6 +19,7 @@ const AVAILABILITY_STYLE: Record<ProductCardType['availability'], string> = {
 
 function ProductCard({ product }: { product: ProductCardType | WishlistProduct }) {
   const wishlist = useWishlist();
+  const totalStock = 'totalStock' in product ? product.totalStock : 0;
   const hasDiscount =
     product.compareAtPrice != null &&
     product.compareAtPrice > product.basePrice;
@@ -72,6 +73,9 @@ function ProductCard({ product }: { product: ProductCardType | WishlistProduct }
         >
           {AVAILABILITY_LABEL[product.availability]}
         </span>
+        {product.availability === 'in_stock' && totalStock > 0 && totalStock <= 3 && (
+          <p className="mt-2 text-xs font-semibold text-orange-700">Only {totalStock} left</p>
+        )}
       </Link>
     </article>
   );

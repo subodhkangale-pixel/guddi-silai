@@ -1,8 +1,9 @@
 import { z } from 'zod';
 
-export const measurementSchema = z.object({
+export const measurementProfileSchema = z.object({
+  alias: z.string().max(60).optional(),
   values: z.array(z.object({
-    fieldId: z.string().min(1).optional(),
+    fieldId: z.string().min(1),
     fieldKey: z.string().min(1),
     label: z.string().min(1),
     value: z.number().finite().positive().max(200),
@@ -10,4 +11,4 @@ export const measurementSchema = z.object({
   })).min(1),
 });
 
-export type MeasurementInput = z.infer<typeof measurementSchema>;
+export type MeasurementProfileInput = z.infer<typeof measurementProfileSchema>;

@@ -67,6 +67,18 @@ export async function addItem(ownerKey: string, userId: string | undefined, inpu
     unitPrice += fiberPrice;
   }
 
+  let embroideryName: string | undefined;
+  let embroiderySurcharge: number | undefined;
+  if (input.embroideryId) {
+    const embroidery = product.embroideryOptions.find(
+      (option) => option.id === input.embroideryId && option.isActive !== false
+    );
+    if (!embroidery) throw new AppError(400, 'Selected embroidery is unavailable');
+    embroideryName = embroidery.name;
+    embroiderySurcharge = embroidery.surcharge ?? 0;
+    unitPrice += embroiderySurcharge;
+  }
+
   const [cart, colors, sizes] = await Promise.all([
     getOrCreateCart(ownerKey, userId),
     colorId ? prisma.color.findUnique({ where: { id: colorId } }) : Promise.resolve(null),
@@ -106,8 +118,8 @@ export async function addItem(ownerKey: string, userId: string | undefined, inpu
       fiberName: fiberName ?? null,
       fiberPrice: fiberPrice ?? null,
       embroideryId: input.embroideryId ?? null,
-      embroideryName: null,
-      embroiderySurcharge: null,
+      embroideryName: embroideryName ?? null,
+      embroiderySurcharge: embroiderySurcharge ?? null,
       unitPrice,
       discount: product.discountPercent ?? null,
       quantity: input.quantity,
@@ -119,7 +131,7 @@ export async function addItem(ownerKey: string, userId: string | undefined, inpu
   const summary = totals(items);
   return prisma.cart.update({
     where: { id: cart.id },
-    data: { items, ...summary, userId: userId ?? cart.userId },
+    data: { items, ...summary, couponCode: null, discount: 0, userId: userId ?? cart.userId },
   });
 }
 
@@ -129,7 +141,7 @@ export async function updateItem(ownerKey: string, index: number, input: UpdateC
   const items = [...cart.items];
   if (input.quantity === 0) items.splice(index, 1);
   else items[index] = { ...items[index], quantity: input.quantity };
-  return prisma.cart.update({ where: { id: cart.id }, data: { items, ...totals(items) } });
+  return prisma.cart.update({ where: { id: cart.id }, data: { items, ...totals(items), couponCode: null, discount: 0 } });
 }
 
 export async function removeItem(ownerKey: string, index: number) {
@@ -154,5 +166,5 @@ export async function updateMeasurements(ownerKey: string, index: number, input:
 export async function clearCart(ownerKey: string) {
   const cart = await prisma.cart.findUnique({ where: { ownerKey } });
   if (!cart) return getCart(ownerKey);
-  return prisma.cart.update({ where: { id: cart.id }, data: { items: [], totalItems: 0, totalPrice: 0 } });
+  return prisma.cart.update({ where: { id: cart.id }, data: { items: [], totalItems: 0, totalPrice: 0, couponCode: null, discount: 0 } });
 }

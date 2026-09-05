@@ -46,15 +46,15 @@
 
 ## Phase 5 — Product Details
 - [x] Product gallery with thumbnails (§7)
-- [ ] Mobile-style image zoom (pinch/double-tap/drag; desktop wheel/buttons) (§8)
+- [x] Desktop image zoom controls and wheel zoom; mobile pinch/double-tap remains pending (§8)
 - [x] Detail info incl. design ID, price/discount/final, availability, fabric, embroidery, color, size,
         stitching, care (§9)
 - [x] Like, Add to Cart, WhatsApp Enquiry, Share (§9) — capability-driven per type (§46/§83)
-- [ ] SEO metadata + structured data + social preview (§57–§58)
+- [x] Product title, description, canonical URL, and Product structured data (§57–§58)
 
 ## Phase 6 — Wishlist (§26)
 - [x] Guest wishlist → browser-local storage
-- [ ] Authenticated wishlist → database
+- [x] Authenticated wishlist → database API
 - [ ] Wishlist page (image/name/price/availability, Move to Cart, Remove) — local saved designs are available; Move to Cart remains pending
 
 ## Phase 7 — Cart (§27–§28)
@@ -90,18 +90,19 @@
         (~1.6–1.9%, T+1) documented as fallback gateway; **Instamojo links** for WhatsApp-driven sales
 
 ## Phase 12 — Orders (§35, §42–§44)
-- [ ] Order lifecycle with PDF statuses: Placed → Confirmed → Processing → Stitching → Quality Check → Packed →
+- [x] Order lifecycle with enforced sequential PDF statuses: Placed → Confirmed → Processing → Stitching → Quality Check → Packed →
         Shipped → Delivered (+ Cancelled/Returned/Failed)
 - [ ] My Orders (order id, date, products, amount, payment status, order status)
 - [ ] Admin order management + filters + custom-order detail (measurements + version)
 - [ ] Order snapshots (embedded item + measurement snapshots)
-- [ ] Notifications (customer + admin) (§51)
+- [x] In-app notifications on order placement and admin status changes for customers/admins (§51)
+- [ ] External delivery channels (§51)
 
 ## Phase 13 — Inventory (§47–§48)
 - [x] READY_MADE stock per (color×size) + SKU + out-of-stock combos (§47)
 - [x] **Fiber inventory** per (fiber×color) for customization (§48)
 - [x] Decrement on order (+ audit); low-stock query and admin adjustments (§51)
-- [ ] Customer-facing "Only X left" indicator (§67)
+- [x] Customer-facing "Only X left" indicator from real stock (§67)
 
 ## Phase 14 — Admin Panel (§36–§64)
 - [x] Analytics event summary dashboard foundation (visitors, product views, cart adds, wishlist adds, orders,
@@ -112,8 +113,10 @@
 - [ ] RBAC enforcement (Super Admin, Order Manager, Product Manager, Stitching Manager, Analyst) + admin activity logs (§62–§64)
 
 ## Phase 15 — Reviews / Coupons / Offers
-- [ ] Reviews for ready-to-buy (rating, text, photo) + admin moderation (§34)
-- [ ] Coupons (§49) + Offers/product-category-festival discounts (§50)
+- [x] Reviews for ready-to-buy (rating, text, photo URL) + admin moderation (§34)
+- [x] Coupon creation/application/removal with server-side validation and order snapshots (§49)
+- [x] Offer active-listing and admin create/deactivate foundation (§50)
+- [ ] Apply product/category/festival offers to cart totals and order snapshots (§50)
 
 ## Phase 16 — Analytics Events (§76–§78)
 - [x] Event ingestion for the required event set + product view start/end
@@ -121,7 +124,8 @@
 - [ ] Optional GA4 feed (§82)
 
 ## Phase 17 — SEO / Performance (§56–§58)
-- [ ] SEO metadata, canonical unique URLs, structured data, sitemap, robots, OG/social previews
+- [x] Product SEO metadata, canonical URLs, and structured data
+- [ ] Sitemap, robots, OG/social previews
 - [ ] Performance: WebP/AVIF, CDN, lazy loading, responsive images, compression, browser caching
 - [ ] (O) prerender/SSR decision for crawlability
 

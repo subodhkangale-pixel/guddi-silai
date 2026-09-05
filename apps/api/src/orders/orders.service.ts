@@ -1,8 +1,10 @@
 import { OrderStatus, PaymentMethod, PaymentStatus } from '@prisma/client';
+import { ORDER_STATUS_FLOW, ORDER_TERMINAL_STATUSES } from '@guddi-silai/shared';
 
 import { prisma } from '../lib/prisma.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { CreateOrderInput } from './orders.schemas.js';
+import * as notificationsService from '../notifications/notifications.service.js';
 
 function orderNumber() {
   const stamp = Date.now().toString(36).toUpperCase();
@@ -34,7 +36,10 @@ export async function createOrder(ownerKey: string, input: CreateOrderInput) {
     }
   }
 
+  const subtotal = Number(cart.items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0).toFixed(2));
+  const discount = Number((cart.discount ?? 0).toFixed(2));
   const total = Number(cart.totalPrice.toFixed(2));
+  const coupon = cart.couponCode ? await prisma.coupon.findUnique({ where: { code: cart.couponCode } }) : null;
   const measurementSnapshotFor = (item: (typeof cart.items)[number]) => {
     if (item.productType !== 'CUSTOMIZE' || !Array.isArray(item.measurementValues)) return null;
     return {
@@ -95,8 +100,9 @@ export async function createOrder(ownerKey: string, input: CreateOrderInput) {
         amount: total,
         paidAt: null,
       },
-      subtotal: total,
-      discount: 0,
+      coupon: coupon ? { code: coupon.code, type: coupon.type, discount } : null,
+      subtotal,
+      discount,
       shipping: 0,
       tax: 0,
       total,
@@ -125,6 +131,11 @@ export async function createOrder(ownerKey: string, input: CreateOrderInput) {
     }
   }
   await prisma.cart.update({ where: { id: cart.id }, data: { items: [], totalItems: 0, totalPrice: 0 } });
+  if (coupon) await prisma.coupon.update({ where: { id: coupon.id }, data: { usedCount: { increment: 1 } } });
+  if (ownerKey) {
+    await notificationsService.createForUser(ownerKey, 'Order placed', `Your order ${order.orderNumber} has been placed.`, 'ORDER_PLACED');
+    await notificationsService.createForAdmins('New order received', `Order ${order.orderNumber} is ready for review.`, 'NEW_ORDER');
+  }
 
   return order;
 }
@@ -149,5 +160,14 @@ export async function adminListOrders(status?: OrderStatus) {
 export async function adminUpdateStatus(orderId: string, status: OrderStatus) {
   const order = await prisma.order.findUnique({ where: { id: orderId } });
   if (!order) throw new AppError(404, 'Order not found');
+  if (order.status !== status) {
+    const currentIndex = ORDER_STATUS_FLOW.indexOf(order.status as (typeof ORDER_STATUS_FLOW)[number]);
+    const nextIndex = ORDER_STATUS_FLOW.indexOf(status as (typeof ORDER_STATUS_FLOW)[number]);
+    const isTerminal = ORDER_TERMINAL_STATUSES.includes(status as (typeof ORDER_TERMINAL_STATUSES)[number]);
+    const canCancel = isTerminal && status === 'CANCELLED' && !ORDER_TERMINAL_STATUSES.includes(order.status as (typeof ORDER_TERMINAL_STATUSES)[number]);
+    if (!canCancel && (currentIndex < 0 || nextIndex !== currentIndex + 1)) {
+      throw new AppError(409, `Invalid order transition from ${order.status} to ${status}`);
+    }
+  }
   return prisma.order.update({ where: { id: orderId }, data: { status } });
 }

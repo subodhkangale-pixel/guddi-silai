@@ -24,6 +24,7 @@ const product = {
   images: ['image.webp'],
   isActive: true,
   fiberOptions: [{ id: 'f1', name: 'Silk', price: 300, isActive: true }],
+  embroideryOptions: [{ id: 'e1', name: 'Zardosi', surcharge: 500, isActive: true }],
 };
 
 const cart = {
@@ -72,6 +73,26 @@ describe('cart service', () => {
 
     expect(result.totalPrice).toBe(1500);
     expect(result.items[0]).toMatchObject({ fiberId: 'f1', fiberName: 'Silk', unitPrice: 1500, measurementStatus: 'PENDING' });
+  });
+
+  it('adds the embroidery surcharge to a custom item price', async () => {
+    prisma.product.findUnique.mockResolvedValue({
+      ...product,
+      type: 'CUSTOMIZE',
+    });
+
+    const result = await cartService.addItem('guest-1', undefined, {
+      productId: 'p1', productType: 'CUSTOMIZE', fiberId: 'f1', colorId: 'c1', embroideryId: 'e1', quantity: 1,
+    });
+
+    expect(result.totalPrice).toBe(2000);
+    expect(result.items[0]).toMatchObject({
+      fiberId: 'f1',
+      embroideryId: 'e1',
+      embroideryName: 'Zardosi',
+      embroiderySurcharge: 500,
+      unitPrice: 2000,
+    });
   });
 
   it('rejects quantities above available stock', async () => {

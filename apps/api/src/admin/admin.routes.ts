@@ -9,6 +9,7 @@ import catalogueAdminRouter from '../catalogue/catalogue.admin.routes.js';
 import productsAdminRouter from '../products/products.admin.routes.js';
 import ordersAdminRouter from '../orders/orders.admin.routes.js';
 import inventoryRouter from '../inventory/inventory.routes.js';
+import couponsAdminRouter from '../coupons/coupons.admin.routes.js';
 
 const router: Router = Router();
 
@@ -25,5 +26,6 @@ router.use(catalogueAdminRouter);
 router.use('/products', productsAdminRouter);
 router.use(ordersAdminRouter);
 router.use('/inventory', inventoryRouter);
+router.use('/coupons', couponsAdminRouter);
 
 export default router;

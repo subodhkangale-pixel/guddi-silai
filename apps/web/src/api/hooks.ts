@@ -12,8 +12,9 @@ import {
   getSubCategories,
 } from './catalogApi';
 import { Category, CursorResponse, ProductCard, ProductDetail, ProductQuery } from './types';
-import { addCartItem, clearCart, getCart, updateCartItem, updateMeasurements, AddCartItemInput, MeasurementValue } from './cartApi';
+import { addCartItem, applyCoupon, clearCart, getCart, removeCoupon, updateCartItem, updateMeasurements, AddCartItemInput, MeasurementValue } from './cartApi';
 import { createOrder, CreateOrderInput, getOrders } from './orderApi';
+import { getNotifications, markNotificationRead } from './notificationApi';
 
 // ──────────────────────────────────────────────
 // Catalogue reference hooks
@@ -117,6 +118,16 @@ export function useClearCart() {
   });
 }
 
+export function useApplyCoupon() {
+  const queryClient = useQueryClient();
+  return useMutation({ mutationFn: applyCoupon, onSuccess: (result) => queryClient.setQueryData(['cart'], { data: result.data.cart }) });
+}
+
+export function useRemoveCoupon() {
+  const queryClient = useQueryClient();
+  return useMutation({ mutationFn: removeCoupon, onSuccess: (result) => queryClient.setQueryData(['cart'], result) });
+}
+
 export function useCreateOrder() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -129,6 +140,18 @@ export function useCreateOrder() {
 
 export function useOrders() {
   return useQuery({ queryKey: ['orders'], queryFn: getOrders });
+}
+
+export function useNotifications() {
+  return useQuery({ queryKey: ['notifications'], queryFn: getNotifications });
+}
+
+export function useMarkNotificationRead() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: markNotificationRead,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notifications'] }),
+  });
 }
 
 // ──────────────────────────────────────────────

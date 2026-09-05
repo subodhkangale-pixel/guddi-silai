@@ -206,7 +206,7 @@ Permissions: `catalogue:read` / `catalogue:write`. All mutations log admin activ
 
 ## 7. /wishlist (R §26)
 
-- Authenticated: `GET/POST/DELETE /wishlist` (DB-backed).
+- Authenticated: `GET/POST/DELETE /wishlist` (DB-backed) is implemented with ownership enforced by `requireAuth`.
 - Guest: **browser-local** (no server API).
 - Wishlist display data (image/name/price/availability) served via `/products` as needed; "Move to Cart" supported.
 
@@ -236,7 +236,8 @@ custom fabric selection, measurement completion, stock validation, and server to
   §35).
 - Admin: `GET/PATCH /admin/orders` with status filters and RBAC-protected status updates.
 - Remaining: dedicated tracking endpoint, cancellation/refunds, fiber inventory decrement, and notification delivery.
-- Order-status transitions use the exact PDF labels (§35/§42) — see database-design §9.2.
+- Order-status transitions use the exact PDF labels and enforce sequential progression; cancellation is controlled
+  as a terminal transition (§35/§42) — see database-design §9.2.
 
 ---
 
@@ -250,14 +251,18 @@ custom fabric selection, measurement completion, stock validation, and server to
 
 ## 11. /reviews (R §34)
 
-- Reviews/ratings for **ready-to-buy** products; rating + text + photo review.
-- `GET /products/:slug/reviews`, `POST /reviews` (authenticated, buyer), admin `PATCH /reviews/:id` (approve/delete).
+- Reviews/ratings for **ready-to-buy** products; rating + text + photo URL, with pending moderation.
+- `GET /products/:productId/reviews`, `POST /reviews` (authenticated), admin `GET/PATCH /admin/reviews` (moderate).
 
 ---
 
 ## 12. /coupons & /offers (R §49–§50)
 
-- Admin CRUD for coupons (§49: percent/fixed, min order, max discount, category/product, expiry, usage limit).
+- `POST/DELETE /coupons/apply` and `/coupons` apply/remove server-side coupons on guest or authenticated carts.
+- Admin `GET/POST /admin/coupons` manages percent/fixed coupons with minimum order, max discount, product scope,
+  expiry, and usage limit.
+- `GET /offers` exposes currently active offers; admin `GET/POST/DELETE /offers/admin` manages offers with
+  `offer:write` RBAC. Applying offer discounts to cart totals remains next.
 - Admin CRUD for offers (§50: product discount, category discount, festival sale, limited-time).
 - Application evaluated server-side at cart/checkout.
 
@@ -284,9 +289,11 @@ custom fabric selection, measurement completion, stock validation, and server to
 
 ## 15. /notifications (R §51)
 
-- Send customer notifications (order placed/confirmed/stitching started/shipped/delivered) and admin
-  notifications (new order, new customer, payment received, low stock, new enquiry). Transport is an open detail
-  (see Open Questions).
+- `GET /notifications` and `PATCH /notifications/:id/read` provide authenticated in-app notifications; the web
+  app exposes them at `/notifications`.
+- Order placement creates a customer notification and fan-outs a new-order notification to active admins; admin
+  status changes create customer status notifications.
+- Remaining: low-stock/payment notifications and external delivery channels.
 
 ---
 

@@ -31,6 +31,8 @@ export interface Cart {
   items: CartItem[];
   totalItems: number;
   totalPrice: number;
+  couponCode?: string | null;
+  discount?: number;
 }
 
 export interface AddCartItemInput {
@@ -94,4 +96,14 @@ export async function updateMeasurements(index: number, values: MeasurementValue
 export async function clearCart() {
   const token = await ensureGuestToken();
   return apiRequest<{ data: Cart }>('/cart', { method: 'DELETE', token });
+}
+
+export async function applyCoupon(code: string) {
+  const token = await ensureGuestToken();
+  return apiRequest<{ data: { cart: Cart; discount: number } }>('/coupons/apply', { method: 'POST', token, body: { code } });
+}
+
+export async function removeCoupon() {
+  const token = await ensureGuestToken();
+  return apiRequest<{ data: Cart }>('/coupons', { method: 'DELETE', token });
 }
