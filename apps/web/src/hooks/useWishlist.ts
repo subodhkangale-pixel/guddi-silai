@@ -86,9 +86,17 @@ export function useWishlist() {
   }, [isAuthenticated]);
 
   useEffect(() => {
-    if (!isAuthenticated) return;
     const sync = () => {
-      if (readLocalWishlist().length === 0) setItems([]);
+      if (!isAuthenticated) {
+        setItems(readLocalWishlist());
+        return;
+      }
+
+      void getWishlist()
+        .then((result) => setItems(dbItemsToProducts(result?.data.items ?? [])))
+        .catch(() => {
+          // Keep the visible state if the refresh cannot reach the API.
+        });
     };
     window.addEventListener('wishlist-updated', sync);
     return () => window.removeEventListener('wishlist-updated', sync);
@@ -101,7 +109,10 @@ export function useWishlist() {
         const action = saved ? removeWishlistItem(product.id) : addWishlistItem(product.id);
         void action
           .then((result) => {
-            if (result) setItems(dbItemsToProducts(result.data.items));
+            if (result) {
+              setItems(dbItemsToProducts(result.data.items));
+              window.dispatchEvent(new Event('wishlist-updated'));
+            }
           })
           .catch(() => {
             // keep local state consistent on failure
@@ -123,7 +134,9 @@ export function useWishlist() {
   const remove = useCallback(
     (id: string) => {
       if (isAuthenticated) {
-        void removeWishlistItem(id).catch(() => {});
+        void removeWishlistItem(id)
+          .then(() => window.dispatchEvent(new Event('wishlist-updated')))
+          .catch(() => {});
         setItems((current) => current.filter((item) => item.id !== id));
       } else {
         const next = items.filter((item) => item.id !== id);
