@@ -12,7 +12,7 @@ import {
   getSubCategories,
 } from './catalogApi';
 import { Category, CursorResponse, ProductCard, ProductDetail, ProductQuery } from './types';
-import { addCartItem, clearCart, getCart, updateCartItem, updateMeasurements, AddCartItemInput, MeasurementValue } from './cartApi';
+import { addCartItem, applyCoupon, clearCart, getCart, removeCoupon, updateCartItem, updateMeasurements, AddCartItemInput, MeasurementValue } from './cartApi';
 import { createOrder, CreateOrderInput, getOrders } from './orderApi';
 
 // ──────────────────────────────────────────────
@@ -115,6 +115,16 @@ export function useClearCart() {
       queryClient.setQueryData(['cart'], result);
     },
   });
+}
+
+export function useApplyCoupon() {
+  const queryClient = useQueryClient();
+  return useMutation({ mutationFn: applyCoupon, onSuccess: (result) => queryClient.setQueryData(['cart'], { data: result.data.cart }) });
+}
+
+export function useRemoveCoupon() {
+  const queryClient = useQueryClient();
+  return useMutation({ mutationFn: removeCoupon, onSuccess: (result) => queryClient.setQueryData(['cart'], result) });
 }
 
 export function useCreateOrder() {

@@ -119,7 +119,7 @@ export async function addItem(ownerKey: string, userId: string | undefined, inpu
   const summary = totals(items);
   return prisma.cart.update({
     where: { id: cart.id },
-    data: { items, ...summary, userId: userId ?? cart.userId },
+    data: { items, ...summary, couponCode: null, discount: 0, userId: userId ?? cart.userId },
   });
 }
 
@@ -129,7 +129,7 @@ export async function updateItem(ownerKey: string, index: number, input: UpdateC
   const items = [...cart.items];
   if (input.quantity === 0) items.splice(index, 1);
   else items[index] = { ...items[index], quantity: input.quantity };
-  return prisma.cart.update({ where: { id: cart.id }, data: { items, ...totals(items) } });
+  return prisma.cart.update({ where: { id: cart.id }, data: { items, ...totals(items), couponCode: null, discount: 0 } });
 }
 
 export async function removeItem(ownerKey: string, index: number) {
@@ -154,5 +154,5 @@ export async function updateMeasurements(ownerKey: string, index: number, input:
 export async function clearCart(ownerKey: string) {
   const cart = await prisma.cart.findUnique({ where: { ownerKey } });
   if (!cart) return getCart(ownerKey);
-  return prisma.cart.update({ where: { id: cart.id }, data: { items: [], totalItems: 0, totalPrice: 0 } });
+  return prisma.cart.update({ where: { id: cart.id }, data: { items: [], totalItems: 0, totalPrice: 0, couponCode: null, discount: 0 } });
 }

@@ -34,7 +34,10 @@ export async function createOrder(ownerKey: string, input: CreateOrderInput) {
     }
   }
 
+  const subtotal = Number(cart.items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0).toFixed(2));
+  const discount = Number((cart.discount ?? 0).toFixed(2));
   const total = Number(cart.totalPrice.toFixed(2));
+  const coupon = cart.couponCode ? await prisma.coupon.findUnique({ where: { code: cart.couponCode } }) : null;
   const measurementSnapshotFor = (item: (typeof cart.items)[number]) => {
     if (item.productType !== 'CUSTOMIZE' || !Array.isArray(item.measurementValues)) return null;
     return {
@@ -95,8 +98,9 @@ export async function createOrder(ownerKey: string, input: CreateOrderInput) {
         amount: total,
         paidAt: null,
       },
-      subtotal: total,
-      discount: 0,
+      coupon: coupon ? { code: coupon.code, type: coupon.type, discount } : null,
+      subtotal,
+      discount,
       shipping: 0,
       tax: 0,
       total,
@@ -125,6 +129,7 @@ export async function createOrder(ownerKey: string, input: CreateOrderInput) {
     }
   }
   await prisma.cart.update({ where: { id: cart.id }, data: { items: [], totalItems: 0, totalPrice: 0 } });
+  if (coupon) await prisma.coupon.update({ where: { id: coupon.id }, data: { usedCount: { increment: 1 } } });
 
   return order;
 }

@@ -257,7 +257,10 @@ custom fabric selection, measurement completion, stock validation, and server to
 
 ## 12. /coupons & /offers (R §49–§50)
 
-- Admin CRUD for coupons (§49: percent/fixed, min order, max discount, category/product, expiry, usage limit).
+- `POST/DELETE /coupons/apply` and `/coupons` apply/remove server-side coupons on guest or authenticated carts.
+- Admin `GET/POST /admin/coupons` manages percent/fixed coupons with minimum order, max discount, product scope,
+  expiry, and usage limit.
+- Offers remain planned (§50: product/category/festival/limited-time discounts).
 - Admin CRUD for offers (§50: product discount, category discount, festival sale, limited-time).
 - Application evaluated server-side at cart/checkout.
 

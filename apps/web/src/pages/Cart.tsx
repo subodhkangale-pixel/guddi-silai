@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { useState } from 'react';
 
 import Spinner from '../components/Spinner';
-import { useCart, useClearCart, useUpdateCartItem, useUpdateMeasurements } from '../api/hooks';
+import { useApplyCoupon, useCart, useClearCart, useRemoveCoupon, useUpdateCartItem, useUpdateMeasurements } from '../api/hooks';
 import { MeasurementValue } from '../api/cartApi';
 import { formatPrice } from '../lib/format';
 
@@ -11,6 +11,9 @@ function CartPage() {
   const update = useUpdateCartItem();
   const updateMeasurements = useUpdateMeasurements();
   const clear = useClearCart();
+  const applyCoupon = useApplyCoupon();
+  const removeCoupon = useRemoveCoupon();
+  const [couponCode, setCouponCode] = useState('');
   const items = cart.data?.data.items ?? [];
 
   if (cart.isPending) return <Spinner label="Loading your cart…" />;
@@ -72,6 +75,9 @@ function CartPage() {
             <h2 className="text-lg font-semibold text-gray-900">Order summary</h2>
             <div className="mt-4 flex justify-between text-sm text-gray-600"><span>Items</span><span>{cart.data?.data.totalItems}</span></div>
             <div className="mt-3 flex justify-between border-t border-gray-200 pt-3 text-lg font-bold text-gray-900"><span>Total</span><span>{formatPrice(cart.data?.data.totalPrice ?? 0)}</span></div>
+            <form onSubmit={(event) => { event.preventDefault(); applyCoupon.mutate(couponCode); }} className="mt-4 flex gap-2"><input value={couponCode} onChange={(event) => setCouponCode(event.target.value)} placeholder="Coupon code" className="min-w-0 flex-1 rounded border border-gray-300 px-2 py-2 text-sm" /><button className="rounded bg-gray-900 px-3 py-2 text-sm font-semibold text-white">Apply</button></form>
+            {cart.data?.data.couponCode && <p className="mt-2 text-sm text-green-700">{cart.data.data.couponCode} applied. <button type="button" onClick={() => removeCoupon.mutate()} className="underline">Remove</button></p>}
+            {applyCoupon.isError && <p className="mt-2 text-sm text-red-700">{applyCoupon.error.message}</p>}
             <Link to="/checkout" className="mt-5 block w-full rounded-md bg-pink-600 px-4 py-3 text-center text-sm font-semibold text-white hover:bg-pink-700">Continue to checkout</Link>
           </aside>
         </div>

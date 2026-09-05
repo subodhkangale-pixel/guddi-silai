@@ -7,6 +7,7 @@ vi.mock('../src/lib/prisma.js', () => ({
     productVariant: { findUnique: vi.fn(), update: vi.fn() },
     fiberInventory: { findUnique: vi.fn(), update: vi.fn() },
     stockMovement: { create: vi.fn() },
+    coupon: { findUnique: vi.fn(), update: vi.fn() },
   },
 }));
 
@@ -23,6 +24,8 @@ beforeEach(() => {
   prisma.fiberInventory.findUnique.mockResolvedValue({ id: 'fi-1', stock: 5 });
   prisma.fiberInventory.update.mockResolvedValue({ id: 'fi-1', stock: 4 });
   prisma.stockMovement.create.mockResolvedValue({});
+  prisma.coupon.findUnique.mockResolvedValue(null);
+  prisma.coupon.update.mockResolvedValue({});
   prisma.order.create.mockImplementation(async ({ data }) => ({ id: 'o1', ...data }));
 });
 
