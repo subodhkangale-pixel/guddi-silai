@@ -227,6 +227,14 @@ function AdminProducts() {
 
   const records = productsQuery.data?.data.data ?? [];
   const totalPages = productsQuery.data?.data.totalPages ?? 1;
+  const imageUrls = form.images.split(',').map((value) => value.trim()).filter(Boolean);
+
+  function removeImage(url: string) {
+    setForm((current) => ({
+      ...current,
+      images: current.images.split(',').map((value) => value.trim()).filter((value) => value && value !== url).join(', '),
+    }));
+  }
 
   return (
     <div>
@@ -444,6 +452,23 @@ function AdminProducts() {
                   className="input"
                   placeholder="https://…, https://…"
                 />
+                {imageUrls.length > 0 && (
+                  <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-5">
+                    {imageUrls.map((url, index) => (
+                      <div key={url} className="relative aspect-square overflow-hidden rounded-md border border-gray-200 bg-gray-50">
+                        <img src={url} alt={`Product image ${index + 1}`} className="h-full w-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(url)}
+                          className="absolute right-1 top-1 rounded bg-white/95 px-1.5 py-0.5 text-xs font-bold text-red-600 shadow hover:bg-white"
+                          aria-label={`Remove product image ${index + 1}`}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </FormField>
               <FormField label="Tags (comma-separated)">
                 <input
