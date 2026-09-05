@@ -35,4 +35,9 @@ export const env = {
     keySecret: optional('RAZORPAY_KEY_SECRET', ''),
     webhookSecret: optional('RAZORPAY_WEBHOOK_SECRET', ''),
   },
+  cloudinary: {
+    cloudName: optional('CLOUDINARY_CLOUD_NAME', ''),
+    apiKey: optional('CLOUDINARY_API_KEY', ''),
+    apiSecret: optional('CLOUDINARY_API_SECRET', ''),
+  },
 } as const;

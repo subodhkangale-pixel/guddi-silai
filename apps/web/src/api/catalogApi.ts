@@ -128,6 +128,15 @@ export async function adminDeleteProduct(id: string) {
   });
 }
 
+export async function adminUploadProductImages(files: File[]) {
+  const body = new FormData();
+  files.forEach((file) => body.append('images', file));
+  return apiRequestAuth<{ data: { urls: string[] } }>('/admin/uploads/images', {
+    method: 'POST',
+    body,
+  });
+}
+
 export async function adminAddVariant(productId: string, body: unknown) {
   return apiRequestAuth<{ data: ProductVariant }>(
     `/admin/products/${productId}/variants`,
