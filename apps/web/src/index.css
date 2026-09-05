@@ -17,3 +17,7 @@ body {
 #root {
   min-height: 100vh;
 }
+
+.input {
+  @apply rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-purple-500 focus:outline-none;
+}

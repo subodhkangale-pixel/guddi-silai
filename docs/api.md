@@ -1,7 +1,8 @@
 # Guddi Silai — API Architecture (Design)
 
 > Status: **Design + implemented foundation.** Validated against `docs/requirements.pdf`.
-> The authentication section (Section 1) is implemented. Product/cart/order/payment endpoints are design only.
+> The authentication section (Section 1) and the product/catalogue sections (Sections 2.2, 3, 4) are implemented.
+> Cart/order/payment endpoints are design only.
 > Base path `/api/v1`. JSON over HTTP.
 
 ---
@@ -123,21 +124,61 @@ should be called on every sensitive mutation. Bootstrap data (permissions, roles
 
 ## 3. /products (R §31–§33, §45)
 
-- `GET /products` — paginated/cursor listing, filters (§32: category, price range, color, fabric, embroidery,
-  availability incl. Upcoming), sort (§33: Newest, Most Popular, Price low→high/high→low, Most Liked, Most
-  Viewed, Best Rated), **search** (§31: name, design ID, category, color, fiber, embroidery).
-- `GET /products/:slug` — detail incl. gallery, variants/options, SEO, WhatsApp/share info.
-- Admin: product + variant CRUD with §45 fields (designId, category, sub-category, type, price, discount,
-  colors, sizes, fiber, embroidery, images, videos/GIF, stock, SKU, tags, SEO).
+### 3.1 Implemented — Public catalog (Phase 3)
 
----
+- `GET /products` — cursor-paginated listing with infinite scroll. Query (Zod-validated):
+  - `q` — free-text search (§31): matches product **name, description, design ID, tags**, plus any
+    **category / sub-category / color / size / fiber / embroidery** whose *name* contains the query
+    (resolved to IDs server-side, case-insensitive).
+  - `categoryId`, `subCategoryId` — exact filters.
+  - `colorId`, `sizeId`, `fiberId`, `embroideryId` — match against the product's variant options.
+  - `minPrice`, `maxPrice` — base-price range.
+  - `availability` — `in_stock` | `out_of_stock` | `upcoming`.
+  - `sort` — `newest` (default), `price_low_to_high`, `price_high_to_low`, `most_popular`, `most_liked`,
+    `most_viewed`, `best_rated`. The four engagement sorts fall back to `newest` until analytics/review
+    aggregates land (Phases 11/16).
+  - `cursor`, `limit` (default 20, max 50).
+  Response: `{ data: ProductCard[], nextCursor: string | null, hasMore: boolean }`.
+  `ProductCard` = `{ id, slug, name, designId, type, basePrice (after discount), compareAtPrice,
+  discountPercent, images, tags, availability, totalStock, expectedAvailability }`.
+- `GET /products/:slug` — detail: all product fields + `finalPrice`, `availability`, `totalStock`,
+  `category`/`subCategory` (id/name/slug), resolved `colors`/`sizes`, active `variants`, plus embedded
+  `fiberOptions` / `embroideryOptions` snapshots. `404` if inactive.
+
+Pagination is **keyset** (base64url `{sortValue, id}`); the client sends the opaque `nextCursor`.
+
+### 3.2 Implemented — Admin product + variant CRUD (Phase 3)
+
+- `POST /admin/products` — create (§45-wide payload). `slug` auto-generated from `name` if omitted.
+  `colors[]`/`sizes[]`/`fiberIds[]`/`embroideryIds[]` accept reference IDs; fiber/embroidery options are
+  **snapshotted** (id/name/price) onto the product. `409` on duplicate slug/designId.
+- `PATCH /admin/products/:id` — partial update of any field.
+- `DELETE /admin/products/:id` — soft delete (`isActive: false`).
+- `GET /admin/products` — admin grid: `q`, `page`, `limit` (max 100), `includeInactive`. Returns
+  `{ data: AdminProduct[], total, page, limit, totalPages }`.
+- `POST /admin/products/:id/variants` — add variant `{ sku?, colorId, sizeId, price, discount?, stock }`.
+- `PATCH /admin/products/variants/:id` — update variant.
+- `DELETE /admin/products/variants/:id` — hard delete variant.
+
+Permissions: `product:read` / `product:write`. All mutations log admin activity.
 
 ## 4. /categories, /subcategories, /colors, /sizes, /fibers, /embroidery
 
-- `GET` public (active reference data).
-- `/fibers` include per-fiber price (§16: Silk ₹299, etc.) + availability.
-- Admin CRUD with soft delete; categories not hard-coded (§4).
-- (O) Sub-category depth semantics.
+### 4.1 Implemented — Public reads (Phase 3)
+
+- `GET /categories`, `/subcategories`, `/colors`, `/sizes`, `/fibers`, `/embroidery` — return active reference
+  data. Fibers include per-fiber `price`; sub-categories include `categoryId`. `/subcategories` accepts an
+  optional `categoryId` filter.
+
+### 4.2 Implemented — Admin CRUD (Phase 3)
+
+- `POST/PATCH/DELETE` + `GET` (with `q` search and `includeInactive`) at `/admin/categories`,
+  `/admin/subcategories`, `/admin/colors`, `/admin/sizes`, `/admin/fibers`, `/admin/embroidery`.
+  Categories/sub-categories auto-generate `slug` from `name`; deletes are soft (set `isActive: false`).
+  Category uniqueness is enforced by slug; Color/Size/Embroidery by name where defined; the reference
+  data is **not hard-coded** — it is DB-backed per §4.
+
+Permissions: `catalogue:read` / `catalogue:write`. All mutations log admin activity.
 
 ---
 

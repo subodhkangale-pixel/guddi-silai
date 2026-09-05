@@ -291,3 +291,41 @@ export type StockMovementType = (typeof STOCK_MOVEMENT_TYPES)[number];
 
 export const REVIEW_STATUSES = ['pending', 'approved', 'rejected'] as const;
 export type ReviewStatus = (typeof REVIEW_STATUSES)[number];
+
+// ──────────────────────────────────────────────
+// Catalogue Sort Options (§33)
+// ──────────────────────────────────────────────
+
+export const SORT_OPTIONS = [
+  'newest',
+  'price_low_to_high',
+  'price_high_to_low',
+  'most_popular',
+  'most_liked',
+  'most_viewed',
+  'best_rated',
+] as const;
+
+export type SortOption = (typeof SORT_OPTIONS)[number];
+
+export function isValidSortOption(value: string): value is SortOption {
+  return SORT_OPTIONS.includes(value as SortOption);
+}
+
+// ──────────────────────────────────────────────
+// Catalogue Availability Filters (§32)
+// ──────────────────────────────────────────────
+
+export const AVAILABILITY_FILTERS = [
+  'in_stock',
+  'out_of_stock',
+  'upcoming',
+] as const;
+
+export type AvailabilityFilter = (typeof AVAILABILITY_FILTERS)[number];
+
+export function isValidAvailabilityFilter(
+  value: string
+): value is AvailabilityFilter {
+  return AVAILABILITY_FILTERS.includes(value as AvailabilityFilter);
+}
