@@ -1,4 +1,5 @@
-const API_BASE: string = import.meta.env.VITE_API_URL ?? '/api/v1';
+const apiOrigin = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '');
+const API_BASE: string = apiOrigin ? `${apiOrigin}/api/v1` : '/api/v1';
 
 export class ApiError extends Error {
   status: number;
@@ -34,17 +35,22 @@ export async function apiRequest<T>(
   path: string,
   options: RequestOptions = {}
 ): Promise<T> {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  };
+  const isFormData = options.body instanceof FormData;
+  const headers: Record<string, string> = {};
+  if (!isFormData) headers['Content-Type'] = 'application/json';
   if (options.token) {
     headers.Authorization = `Bearer ${options.token}`;
   }
+  const requestBody: BodyInit | undefined = options.body === undefined
+    ? undefined
+    : isFormData
+      ? options.body as FormData
+      : JSON.stringify(options.body);
 
   const response = await fetch(buildUrl(`${API_BASE}${path}`, options.query), {
     method: options.method ?? 'GET',
     headers,
-    body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+    body: requestBody,
   });
 
   const body = (await response.json().catch(() => null)) as {

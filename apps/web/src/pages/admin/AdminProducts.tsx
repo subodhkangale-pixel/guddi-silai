@@ -6,6 +6,7 @@ import {
   adminCreateProduct,
   adminDeleteProduct,
   adminListProducts,
+  adminUploadProductImages,
   adminUpdateProduct,
 } from '../../api/catalogApi';
 import { useCategories, useColors, useEmbroideries, useFibers, useSizes, useSubCategories } from '../../api/hooks';
@@ -145,6 +146,23 @@ function AdminProducts() {
     },
     onError: (err: Error) => setError(err.message),
   });
+
+  const imageUploadMutation = useMutation({
+    mutationFn: adminUploadProductImages,
+    onSuccess: (result) => {
+      setForm((current) => {
+        const existing = current.images.split(',').map((value) => value.trim()).filter(Boolean);
+        return { ...current, images: [...existing, ...result.data.urls].join(', ') };
+      });
+    },
+    onError: (err: Error) => setError(err.message),
+  });
+
+  function uploadImages(files: FileList | null) {
+    if (!files?.length) return;
+    setError(null);
+    imageUploadMutation.mutate(Array.from(files));
+  }
 
   async function syncVariants(saved: AdminProduct) {
     for (const draft of variants) {
@@ -404,7 +422,21 @@ function AdminProducts() {
                   className="input"
                 />
               </FormField>
-              <FormField label="Images (comma-separated URLs)">
+              <FormField label="Product images">
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/avif"
+                  multiple
+                  onChange={(e) => {
+                    uploadImages(e.target.files);
+                    e.target.value = '';
+                  }}
+                  disabled={imageUploadMutation.isPending}
+                  className="input"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  {imageUploadMutation.isPending ? 'Uploading images…' : 'Upload up to 10 JPG, PNG, WebP, or AVIF images (8 MB each).'}
+                </p>
                 <input
                   type="text"
                   value={form.images}
