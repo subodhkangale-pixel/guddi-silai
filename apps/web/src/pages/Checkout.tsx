@@ -158,7 +158,20 @@ function CheckoutPage() {
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               {(['name', 'mobile', 'email', 'city', 'state', 'pincode'] as const).map((field) => (
                 <label key={field} className="text-sm font-medium capitalize text-gray-700">{field === 'pincode' ? 'Pincode' : field}
-                  <input required={field !== 'email'} type={field === 'email' ? 'email' : 'text'} value={form[field]} onChange={(event) => setForm({ ...form, [field]: event.target.value })} className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2" />
+                  <input
+                    required={field !== 'email'}
+                    type={field === 'email' ? 'email' : field === 'mobile' ? 'tel' : 'text'}
+                    inputMode={field === 'mobile' || field === 'pincode' ? 'numeric' : undefined}
+                    autoComplete={field === 'mobile' ? 'tel' : field === 'pincode' ? 'postal-code' : field === 'name' ? 'name' : field === 'email' ? 'email' : undefined}
+                    pattern={field === 'mobile' ? '(?:\\+91[ -]?)?[6-9][0-9]{9}' : field === 'pincode' ? '[1-9][0-9]{5}' : undefined}
+                    maxLength={field === 'mobile' ? 13 : field === 'pincode' ? 6 : undefined}
+                    value={form[field]}
+                    onChange={(event) => {
+                      const value = field === 'pincode' ? event.target.value.replace(/\D/g, '').slice(0, 6) : event.target.value;
+                      setForm({ ...form, [field]: value });
+                    }}
+                    className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2"
+                  />
                 </label>
               ))}
             </div>

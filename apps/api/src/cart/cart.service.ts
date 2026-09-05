@@ -257,15 +257,18 @@ export async function updateMeasurements(ownerKey: string, index: number, input:
   const required = fields.filter((field) => field.isRequired).map((field) => field.key);
   const provided = new Set(input.values.map((value) => value.fieldKey));
   if (input.values.length === 0) throw new AppError(400, 'Provide at least one measurement');
+  if (provided.size !== input.values.length) throw new AppError(400, 'Each measurement can only be provided once');
+  const unknown = input.values.map((value) => value.fieldKey).filter((key) => !fieldByKey.has(key));
+  if (unknown.length > 0) throw new AppError(400, 'One or more measurements are not valid');
   const missing = required.filter((key) => !provided.has(key));
   if (missing.length > 0) throw new AppError(400, `Missing required measurements: ${missing.join(', ')}`);
 
   const snapshot = input.values.map((value) => {
-    const field = fieldByKey.get(value.fieldKey) ?? { id: value.fieldId, label: value.label };
+    const field = fieldByKey.get(value.fieldKey)!;
     return {
-      fieldId: value.fieldId ?? field.id ?? value.fieldKey,
+      fieldId: field.id,
       fieldKey: value.fieldKey,
-      label: value.label,
+      label: field.label,
       value: value.value,
       unit: value.unit,
     };
