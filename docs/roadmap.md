@@ -112,7 +112,7 @@
 - [ ] RBAC enforcement (Super Admin, Order Manager, Product Manager, Stitching Manager, Analyst) + admin activity logs (§62–§64)
 
 ## Phase 15 — Reviews / Coupons / Offers
-- [ ] Reviews for ready-to-buy (rating, text, photo) + admin moderation (§34)
+- [x] Reviews for ready-to-buy (rating, text, photo URL) + admin moderation (§34)
 - [ ] Coupons (§49) + Offers/product-category-festival discounts (§50)
 
 ## Phase 16 — Analytics Events (§76–§78)

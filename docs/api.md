@@ -250,8 +250,8 @@ custom fabric selection, measurement completion, stock validation, and server to
 
 ## 11. /reviews (R §34)
 
-- Reviews/ratings for **ready-to-buy** products; rating + text + photo review.
-- `GET /products/:slug/reviews`, `POST /reviews` (authenticated, buyer), admin `PATCH /reviews/:id` (approve/delete).
+- Reviews/ratings for **ready-to-buy** products; rating + text + photo URL, with pending moderation.
+- `GET /products/:productId/reviews`, `POST /reviews` (authenticated), admin `GET/PATCH /admin/reviews` (moderate).
 
 ---
 

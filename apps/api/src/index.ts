@@ -13,6 +13,7 @@ import ordersRouter from './orders/orders.routes.js';
 import paymentsRouter from './payments/payments.routes.js';
 import analyticsRouter from './analytics/analytics.routes.js';
 import wishlistRouter from './wishlist/wishlist.routes.js';
+import reviewsRouter from './reviews/reviews.routes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { env } from './config/env.js';
 
@@ -41,6 +42,7 @@ app.use('/api/v1/orders', ordersRouter);
 app.use('/api/v1/payments', paymentsRouter);
 app.use('/api/v1/analytics', analyticsRouter);
 app.use('/api/v1/wishlist', wishlistRouter);
+app.use('/api/v1', reviewsRouter);
 
 app.use((req, res) => {
   res.status(404).json({ error: 'Not found' });
