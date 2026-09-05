@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { getAdminMe } from './admin';
 import {
@@ -12,6 +12,8 @@ import {
   getSubCategories,
 } from './catalogApi';
 import { Category, CursorResponse, ProductCard, ProductDetail, ProductQuery } from './types';
+import { addCartItem, clearCart, getCart, updateCartItem, updateMeasurements, AddCartItemInput, MeasurementValue } from './cartApi';
+import { createOrder, CreateOrderInput, getOrders } from './orderApi';
 
 // ──────────────────────────────────────────────
 // Catalogue reference hooks
@@ -68,6 +70,65 @@ export function useProduct(slug: string | undefined) {
     enabled: Boolean(slug),
     retry: false,
   });
+}
+
+export function useCart() {
+  return useQuery({ queryKey: ['cart'], queryFn: getCart });
+}
+
+export function useAddCartItem() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: AddCartItemInput) => addCartItem(input),
+    onSuccess: (result) => {
+      queryClient.setQueryData(['cart'], result);
+    },
+  });
+}
+
+export function useUpdateCartItem() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ index, quantity }: { index: number; quantity: number }) =>
+      updateCartItem(index, quantity),
+    onSuccess: (result) => {
+      queryClient.setQueryData(['cart'], result);
+    },
+  });
+}
+
+export function useUpdateMeasurements() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ index, values }: { index: number; values: MeasurementValue[] }) => updateMeasurements(index, values),
+    onSuccess: (result) => {
+      queryClient.setQueryData(['cart'], result);
+    },
+  });
+}
+
+export function useClearCart() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: clearCart,
+    onSuccess: (result) => {
+      queryClient.setQueryData(['cart'], result);
+    },
+  });
+}
+
+export function useCreateOrder() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreateOrderInput) => createOrder(input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cart'] });
+    },
+  });
+}
+
+export function useOrders() {
+  return useQuery({ queryKey: ['orders'], queryFn: getOrders });
 }
 
 // ──────────────────────────────────────────────

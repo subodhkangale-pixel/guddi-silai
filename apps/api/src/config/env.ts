@@ -30,4 +30,9 @@ export const env = {
   google: {
     clientId: optional('GOOGLE_CLIENT_ID', ''),
   },
+  razorpay: {
+    keyId: optional('RAZORPAY_KEY_ID', ''),
+    keySecret: optional('RAZORPAY_KEY_SECRET', ''),
+    webhookSecret: optional('RAZORPAY_WEBHOOK_SECRET', ''),
+  },
 } as const;

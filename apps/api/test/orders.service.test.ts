@@ -1,0 +1,63 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('../src/lib/prisma.js', () => ({
+  prisma: {
+    cart: { findUnique: vi.fn(), update: vi.fn() },
+    order: { create: vi.fn(), findMany: vi.fn() },
+    productVariant: { findUnique: vi.fn(), update: vi.fn() },
+  },
+}));
+
+import { prisma } from '../src/lib/prisma.js';
+import * as ordersService from '../src/orders/orders.service.js';
+
+const customer = { name: 'Asha', mobile: '9876543210', email: '', address: 'Main road', city: 'Pune', state: 'Maharashtra', pincode: '411001', paymentMethod: 'COD' as const };
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  prisma.cart.update.mockResolvedValue({});
+  prisma.productVariant.findUnique.mockResolvedValue({ isActive: true, stock: 5 });
+  prisma.productVariant.update.mockResolvedValue({});
+  prisma.order.create.mockImplementation(async ({ data }) => ({ id: 'o1', ...data }));
+});
+
+describe('order service', () => {
+  it('rejects custom items without completed measurements', async () => {
+    prisma.cart.findUnique.mockResolvedValue({ id: 'c1', items: [{ productType: 'CUSTOMIZE', measurementStatus: 'PENDING', quantity: 1, unitPrice: 1500, productName: 'Custom blouse' }], totalPrice: 1500 });
+    await expect(ordersService.createOrder('guest-1', customer)).rejects.toMatchObject({ statusCode: 400 });
+  });
+
+  it('creates a snapshot, decrements stock, and clears the cart', async () => {
+    prisma.cart.findUnique.mockResolvedValue({ id: 'c1', items: [{ productType: 'READY_MADE', productId: 'p1', productName: 'Blouse', productDesignId: 'GS-1', variantId: 'v1', color: 'Red', size: 'M', fiberName: null, embroideryName: null, quantity: 2, unitPrice: 1200, discount: null, measurementStatus: null }], totalPrice: 2400 });
+    const result = await ordersService.createOrder('guest-1', customer);
+    expect(result.orderNumber).toMatch(/^GS-/);
+    expect(prisma.productVariant.update).toHaveBeenCalledWith(expect.objectContaining({ data: { stock: { decrement: 2 } } }));
+    expect(prisma.cart.update).toHaveBeenCalledWith(expect.objectContaining({ data: { items: [], totalItems: 0, totalPrice: 0 } }));
+  });
+
+  it('snapshots completed custom measurements with an instruction version', async () => {
+    prisma.cart.findUnique.mockResolvedValue({
+      id: 'c1',
+      items: [{
+        productType: 'CUSTOMIZE', productId: 'p1', productName: 'Custom blouse',
+        productDesignId: 'GS-2', variantId: null, fiberName: 'Silk', embroideryName: null,
+        quantity: 1, unitPrice: 1500, discount: null, measurementStatus: 'COMPLETE',
+        measurementValues: [{ fieldKey: 'bust', label: 'Bust', value: 34, unit: 'INCHES' }],
+      }],
+      totalPrice: 1500,
+    });
+    await ordersService.createOrder('guest-1', customer);
+    expect(prisma.order.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        items: [expect.objectContaining({
+          measurementSnapshot: expect.objectContaining({
+            measurementInstructionVersion: 1,
+            values: [expect.objectContaining({
+              fieldId: 'bust', fieldKey: 'bust', label: 'Bust', value: 34, unit: 'INCHES',
+            })],
+          }),
+        })],
+      }),
+    }));
+  });
+});

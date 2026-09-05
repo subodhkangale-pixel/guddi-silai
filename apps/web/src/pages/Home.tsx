@@ -1,61 +1,74 @@
+import { useCallback, useEffect, useState } from 'react';
+
+import ProductCard from '../components/ProductCard';
+import Spinner from '../components/Spinner';
+import { useProducts } from '../api/hooks';
+
 function Home() {
+  const [sentinel, setSentinel] = useState<HTMLDivElement | null>(null);
+  const products = useProducts({ sort: 'newest' });
+  const items = products.data?.pages.flatMap((page) => page.data) ?? [];
+  const hasMore = products.hasNextPage ?? false;
+
+  const loadMore = useCallback(() => {
+    if (hasMore && !products.isFetchingNextPage) {
+      void products.fetchNextPage();
+    }
+  }, [hasMore, products]);
+
+  useEffect(() => {
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) loadMore();
+      },
+      { rootMargin: '400px' }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [sentinel, loadMore]);
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-      <section className="text-center">
-        <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 tracking-tight">
-          Beautiful Blouses, <span className="text-pink-600">Tailored for You</span>
-        </h2>
-        <p className="mt-6 text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto">
-          Discover ready-made blouses, customize your perfect fit, or showcase your designs.
-          Traditional craftsmanship meets modern convenience.
-        </p>
-        <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-          <a
-            href="/products"
-            className="bg-pink-600 text-white px-8 py-3 rounded-lg text-lg font-medium hover:bg-pink-700 transition-colors"
-          >
-            Explore Collection
-          </a>
-          <a
-            href="/products"
-            className="border-2 border-gray-300 text-gray-700 px-8 py-3 rounded-lg text-lg font-medium hover:bg-gray-50 transition-colors"
-          >
-            Customize Now
-          </a>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24">
+      <section className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-wide text-pink-600">Guddi Silai</p>
+          <h2 className="mt-1 text-3xl font-bold text-gray-900 sm:text-4xl">Find your next blouse</h2>
+          <p className="mt-2 max-w-2xl text-gray-600">
+            Ready-made styles, custom designs, and new work from our collection.
+          </p>
         </div>
+        <a href="/products" className="text-sm font-semibold text-gray-900 hover:text-pink-600">
+          Browse all designs →
+        </a>
       </section>
 
-      <section className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-8">
-        <article className="text-center p-6">
-          <div className="mx-auto h-16 w-16 bg-pink-100 rounded-full flex items-center justify-center mb-4">
-            <svg className="h-8 w-8 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
-            </svg>
+      {products.isPending ? (
+        <Spinner label="Loading latest designs…" />
+      ) : products.isError ? (
+        <div className="rounded-lg bg-red-50 p-5 text-sm text-red-700">
+          We could not load the latest designs. Please try again shortly.
+        </div>
+      ) : items.length === 0 ? (
+        <div className="rounded-lg bg-gray-50 p-10 text-center text-gray-500">
+          New designs are being prepared. Browse the collection to explore more.
+        </div>
+      ) : (
+        <section aria-label="Latest blouse designs">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            {items.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
           </div>
-          <h3 className="text-lg font-semibold text-gray-900">Ready Made</h3>
-          <p className="mt-2 text-gray-600">Browse our curated collection of ready-to-wear blouses in various styles and sizes.</p>
-        </article>
-
-        <article className="text-center p-6">
-          <div className="mx-auto h-16 w-16 bg-pink-100 rounded-full flex items-center justify-center mb-4">
-            <svg className="h-8 w-8 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-            </svg>
+          <div ref={setSentinel} className="flex min-h-16 items-center justify-center py-5">
+            {products.isFetchingNextPage ? (
+              <Spinner label="Loading more designs…" />
+            ) : hasMore ? null : (
+              <p className="text-sm text-gray-400">You have reached the end of the collection.</p>
+            )}
           </div>
-          <h3 className="text-lg font-semibold text-gray-900">Customize</h3>
-          <p className="mt-2 text-gray-600">Design your perfect blouse with custom measurements, fabrics, and design details.</p>
-        </article>
-
-        <article className="text-center p-6">
-          <div className="mx-auto h-16 w-16 bg-pink-100 rounded-full flex items-center justify-center mb-4">
-            <svg className="h-8 w-8 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900">Showcase</h3>
-          <p className="mt-2 text-gray-600">Showcase your unique designs and get featured in our community gallery.</p>
-        </article>
-      </section>
+        </section>
+      )}
     </div>
   );
 }

@@ -2,8 +2,9 @@ import { useParams } from 'react-router-dom';
 import { useState } from 'react';
 
 import Spinner from '../components/Spinner';
-import { useProduct } from '../api/hooks';
+import { useAddCartItem, useProduct } from '../api/hooks';
 import { formatPrice } from '../lib/format';
+import { useWishlist } from '../hooks/useWishlist';
 
 function AvailabilityBadge({
   availability,
@@ -34,7 +35,12 @@ function AvailabilityBadge({
 function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const { data, isPending, isError } = useProduct(slug);
+  const addToCart = useAddCartItem();
+  const wishlist = useWishlist();
   const [activeImage, setActiveImage] = useState(0);
+  const [zoom, setZoom] = useState(1);
+  const [selectedVariantId, setSelectedVariantId] = useState<string>();
+  const [selectedFiberId, setSelectedFiberId] = useState<string>();
 
   if (isPending) return <Spinner label="Loading product…" />;
   if (isError || !data) {
@@ -48,18 +54,45 @@ function ProductDetailPage() {
   const product = data.data;
   const images = product.images.length ? product.images : [];
   const activeSrc = images[activeImage] ?? '';
+  const selectedVariant = product.variants.find((variant) => variant.id === selectedVariantId) ?? product.variants[0];
+  const selectedFiber = product.fiberOptions.find((fiber) => fiber.id === selectedFiberId) ?? product.fiberOptions[0];
+
+  function handleAddToCart() {
+    addToCart.mutate({
+      productId: product.id,
+      productType: product.type as 'READY_MADE' | 'CUSTOMIZE',
+      variantId: product.type === 'READY_MADE' ? selectedVariant?.id : undefined,
+      fiberId: product.type === 'CUSTOMIZE' ? selectedFiber?.id : undefined,
+    });
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
         {/* Gallery */}
         <div>
-          <div className="aspect-[4/5] rounded-lg border border-gray-200 bg-gray-100 overflow-hidden">
+          <div className="relative aspect-[4/5] overflow-hidden rounded-lg border border-gray-200 bg-gray-100">
             {activeSrc ? (
-              <img src={activeSrc} alt={product.name} className="h-full w-full object-cover" />
+              <img
+                src={activeSrc}
+                alt={product.name}
+                onWheel={(event) => {
+                  event.preventDefault();
+                  setZoom((value) => Math.min(3, Math.max(1, value - event.deltaY / 1000)));
+                }}
+                className="h-full w-full object-cover transition-transform duration-150"
+                style={{ transform: `scale(${zoom})` }}
+              />
             ) : (
               <div className="h-full w-full flex items-center justify-center text-gray-400">
                 No image
+              </div>
+            )}
+            {activeSrc && (
+              <div className="absolute bottom-3 right-3 flex overflow-hidden rounded-md border border-gray-200 bg-white/95 shadow-sm">
+                <button type="button" onClick={() => setZoom((value) => Math.min(3, value + 0.25))} className="px-3 py-1 text-lg">+</button>
+                <button type="button" onClick={() => setZoom(1)} className="border-l border-gray-200 px-2 py-1 text-xs">Reset</button>
+                <button type="button" onClick={() => setZoom((value) => Math.max(1, value - 0.25))} className="border-l border-gray-200 px-3 py-1 text-lg">−</button>
               </div>
             )}
           </div>
@@ -171,7 +204,67 @@ function ProductDetailPage() {
             </div>
           )}
 
+          {product.type === 'READY_MADE' && product.variants.length > 0 && (
+            <label className="mt-6 block text-sm font-medium text-gray-700">
+              Choose color and size
+              <select
+                value={selectedVariant?.id ?? ''}
+                onChange={(event) => setSelectedVariantId(event.target.value)}
+                className="mt-2 block w-full rounded-md border border-gray-300 bg-white px-3 py-2"
+              >
+                {product.variants.map((variant) => (
+                  <option key={variant.id} value={variant.id} disabled={variant.stock === 0}>
+                    {product.colors.find((color) => color.id === variant.colorId)?.name ?? 'Color'} / {product.sizes.find((size) => size.id === variant.sizeId)?.name ?? 'Size'}{variant.stock === 0 ? ' — Out of stock' : ''}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+
+          {product.type === 'CUSTOMIZE' && product.fiberOptions.length > 0 && (
+            <label className="mt-6 block text-sm font-medium text-gray-700">
+              Choose fabric
+              <select
+                value={selectedFiber?.id ?? ''}
+                onChange={(event) => setSelectedFiberId(event.target.value)}
+                className="mt-2 block w-full rounded-md border border-gray-300 bg-white px-3 py-2"
+              >
+                {product.fiberOptions.map((fiber) => (
+                  <option key={fiber.id} value={fiber.id}>{fiber.name} (+{formatPrice(fiber.price)})</option>
+                ))}
+              </select>
+            </label>
+          )}
+
           <div className="mt-8 flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => wishlist.toggle(product)}
+              className="rounded-md border border-gray-300 px-5 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              {wishlist.isSaved(product.id) ? '♥ Saved' : '♡ Save'}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const url = window.location.href;
+                if (navigator.share) void navigator.share({ title: product.name, url });
+                else void navigator.clipboard?.writeText(url);
+              }}
+              className="rounded-md border border-gray-300 px-5 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              Share
+            </button>
+            {product.type !== 'SHOWCASE' && (
+              <button
+                type="button"
+                onClick={handleAddToCart}
+                disabled={addToCart.isPending || (product.type === 'READY_MADE' && !selectedVariant) || (product.type === 'CUSTOMIZE' && !selectedFiber)}
+                className="rounded-md bg-pink-600 px-6 py-3 text-sm font-medium text-white hover:bg-pink-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+              >
+                {addToCart.isPending ? 'Adding…' : 'Add to cart'}
+              </button>
+            )}
             <a
               href={`https://wa.me/?text=Hi Guddi Silai! I'm interested in ${encodeURIComponent(
                 `${product.designId ?? product.name} (${product.name})`
@@ -189,6 +282,8 @@ function ProductDetailPage() {
               Back to Collection
             </a>
           </div>
+          {addToCart.isSuccess && <p className="mt-3 text-sm text-green-700">Added to your cart.</p>}
+          {addToCart.isError && <p className="mt-3 text-sm text-red-700">Could not add this item. Please check the selected option.</p>}
         </div>
       </div>
     </div>

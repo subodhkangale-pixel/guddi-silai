@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { ProductCard as ProductCardType } from '../api/types';
 import { formatPrice } from '../lib/format';
+import { WishlistProduct, useWishlist } from '../hooks/useWishlist';
 
 const AVAILABILITY_LABEL: Record<ProductCardType['availability'], string> = {
   in_stock: 'In Stock',
@@ -16,18 +17,17 @@ const AVAILABILITY_STYLE: Record<ProductCardType['availability'], string> = {
   showcase: 'bg-gray-100 text-gray-600',
 };
 
-function ProductCard({ product }: { product: ProductCardType }) {
+function ProductCard({ product }: { product: ProductCardType | WishlistProduct }) {
+  const wishlist = useWishlist();
   const hasDiscount =
     product.compareAtPrice != null &&
     product.compareAtPrice > product.basePrice;
   const compareAt = product.compareAtPrice;
 
   return (
-    <Link
-      to={`/products/${product.slug}`}
-      className="group block bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
-    >
-      <div className="aspect-[4/5] bg-gray-100 overflow-hidden">
+    <article className="group relative block overflow-hidden rounded-lg border border-gray-200 bg-white transition-shadow hover:shadow-md">
+      <Link to={`/products/${product.slug}`}>
+        <div className="aspect-[4/5] bg-gray-100 overflow-hidden">
         {product.images.length > 0 ? (
           <img
             src={product.images[0]}
@@ -40,8 +40,17 @@ function ProductCard({ product }: { product: ProductCardType }) {
             No image
           </div>
         )}
-      </div>
-      <div className="p-4">
+        </div>
+      </Link>
+      <button
+        type="button"
+        aria-label={wishlist.isSaved(product.id) ? 'Remove from wishlist' : 'Add to wishlist'}
+        onClick={() => wishlist.toggle(product)}
+        className="absolute right-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-lg shadow-sm"
+      >
+        {wishlist.isSaved(product.id) ? '♥' : '♡'}
+      </button>
+      <Link to={`/products/${product.slug}`} className="block p-4">
         {product.designId && (
           <p className="text-xs font-medium text-purple-600">{product.designId}</p>
         )}
@@ -63,8 +72,8 @@ function ProductCard({ product }: { product: ProductCardType }) {
         >
           {AVAILABILITY_LABEL[product.availability]}
         </span>
-      </div>
-    </Link>
+      </Link>
+    </article>
   );
 }
 

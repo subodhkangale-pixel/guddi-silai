@@ -41,3 +41,23 @@ export async function apiRequestAuth<T>(
   }
   return apiRequest<T>(path, { ...options, token });
 }
+
+export interface AdminOrder {
+  id: string;
+  orderNumber: string;
+  status: string;
+  total: number;
+  createdAt: string;
+  customer: { name: string; mobile: string; city: string; state: string };
+}
+
+export async function adminListOrders(status?: string) {
+  return apiRequestAuth<{ data: AdminOrder[] }>('/admin/orders', { query: { status } });
+}
+
+export async function adminUpdateOrderStatus(id: string, status: string) {
+  return apiRequestAuth<{ data: AdminOrder }>(`/admin/orders/${id}/status`, {
+    method: 'PATCH',
+    body: { status },
+  });
+}

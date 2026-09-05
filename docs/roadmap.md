@@ -3,6 +3,11 @@
 > Status: **Updated** against `docs/requirements.pdf` (primary source). Foundation is complete (Phase 0).
 > Phase order follows core requirements first; recommended extras (§65–§74) are grouped and deferred
 > (Open Question #6 determines v1 scope).
+>
+> **Market benchmark note (Sept 2026):** roadmap reviewed against live Indian ethnic-wear/blouse stores
+> (Aachho, Binks, Pernia's, AZA, Katansi, Anvi Couture, Shobitam, Sumissura, TheBlouseStore, AdityanDesign).
+> Core roadmap already matches ~80% of their UX; gaps are captured in Phase 21 (add-ons & blouse style
+> options) and the payment-vendor decision in Phase 11 / ADR 017.
 
 ## Phase 0 — Repository / Tooling (COMPLETE)
 - [x] Monorepo (pnpm workspaces), TS strict, ESLint/Prettier/EditorConfig
@@ -35,22 +40,22 @@
 - [x] Sample catalogue + products seeded via `prisma db:seed`
 
 ## Phase 4 — Product Browsing (frontend)
-- [ ] Homepage with direct product feed + infinite scroll (§2, §5) — cursor pagination
-- [ ] Mobile-first layout + bottom navigation (§55)
+- [x] Homepage with direct product feed + infinite scroll (§2, §5) — cursor pagination
+- [x] Mobile-first layout + bottom navigation (§55)
 - [ ] Responsive image grid (WebP/AVIF, lazy load, CDN) (§56)
 
 ## Phase 5 — Product Details
-- [ ] Product gallery (front/back/side/sleeve/fabric/embroidery/model + thumbnails) (§7)
+- [x] Product gallery with thumbnails (§7)
 - [ ] Mobile-style image zoom (pinch/double-tap/drag; desktop wheel/buttons) (§8)
-- [ ] Detail info incl. design ID, price/discount/final, availability, fabric, embroidery, color, size,
+- [x] Detail info incl. design ID, price/discount/final, availability, fabric, embroidery, color, size,
         stitching, care (§9)
-- [ ] Like, Add to Cart, Buy Now, WhatsApp Enquiry, Share (§9) — capability-driven per type (§46/§83)
+- [x] Like, Add to Cart, WhatsApp Enquiry, Share (§9) — capability-driven per type (§46/§83)
 - [ ] SEO metadata + structured data + social preview (§57–§58)
 
 ## Phase 6 — Wishlist (§26)
-- [ ] Guest wishlist → browser-local storage
+- [x] Guest wishlist → browser-local storage
 - [ ] Authenticated wishlist → database
-- [ ] Wishlist page (image/name/price/availability, Move to Cart, Remove)
+- [ ] Wishlist page (image/name/price/availability, Move to Cart, Remove) — local saved designs are available; Move to Cart remains pending
 
 ## Phase 7 — Cart (§27–§28)
 - [ ] Two separated sections: Ready-to-Buy | Customize-with-Measurement
@@ -72,13 +77,17 @@
 - [ ] Order-time measurement snapshot + instruction version (§44)
 
 ## Phase 10 — Checkout (§29)
-- [ ] Simple checkout (name, mobile, email-optional, address, city, state, pincode) — guest allowed
+- [x] Simple checkout (name, mobile, email-optional, address, city, state, pincode) — guest allowed
 - [ ] Order summary split; (recommended) Pincode check, Order Notes
 
-## Phase 11 — Payments (§82, §63)
-- [ ] India-focused gateway (Razorpay or chosen provider — Open Question #5)
-- [ ] Create/verify/webhook (signature-verified, idempotent)
-- [ ] Payment method/status/transaction ID on order (§43)
+## Phase 11 — Payments (§82, §63) — **DECISION: Razorpay (ADR 017)**
+- [x] India-focused gateway — **Razorpay chosen** for a small-business/startup budget (₹0 setup/AMC, pay-per-transaction
+        ~2% + GST, T+2). Already integrated in `apps/api/src/payments` (order create/verify/webhook, HMAC-verified, idempotent)
+- [x] Create/verify/webhook (signature-verified, idempotent)
+- [x] Payment method/status/transaction ID on order (§43)
+- [ ] UPI-first checkout (UPI = 0% TDR per RBI → keeps blended cost ~0.6–1%) + **COD toggle** for trust
+- [ ] (Deferred until COD volume grows) **GoKwik Smart COD / KwikCheckout** for RTO protection; **Cashfree**
+        (~1.6–1.9%, T+1) documented as fallback gateway; **Instamojo links** for WhatsApp-driven sales
 
 ## Phase 12 — Orders (§35, §42–§44)
 - [ ] Order lifecycle with PDF statuses: Placed → Confirmed → Processing → Stitching → Quality Check → Packed →
@@ -125,6 +134,24 @@
 ## Phase 20 — Deployment
 - [ ] CI/CD, environments, monitoring & logging, load testing, backups
 
+## Phase 21 — Add-ons & Blouse Style Options (market benchmark 2026)
+> From a review of live Indian ethnic-wear/blouse stores (Aachho, Binks, Katansi, Shobitam, Anvi Couture,
+> Sumissura, TheBlouseStore, AdityanDesign). These are the features competing stores have that the core
+> roadmap does not — the "add-ons / extra items / customize the blouse" ideas.
+- [ ] **Add-on services at checkout** (Katansi/AdityanDesign/Shobitam style): Fall & Pico (saree edge finish),
+        Blouse Stitching of my-own/matching fabric, Petticoat, Tassels, matching Blouse Piece — selectable as
+        order add-ons; shown in order summary + admin detail
+- [ ] **In-blouse style options for CUSTOMIZE** (Anvi/Sumissura style): neckline (round/V/halter/off-shoulder),
+        sleeve style + length (elbow/3-4th/full/sleeveless), back design, embroidery placement, fitting
+        preference (body-fit / regular-fit / comfort-fit)
+- [ ] **"Pair with / Complete the look"** cross-sell (jewellery, dupatta, petticoat) + Accessorize section
+- [ ] **Shop-by-Occasion pages** (bridal / festive / party / daily) + festive campaign landing pages
+        (Diwali, Holi, Onam — Binks-style collections)
+- [ ] **READY_MADE blouse size-guide page** (measurement-based fit chart) linked from product pages (Binks
+        XS–8XL proprietary fits, Anvi "all sizes welcome")
+- [ ] **Extend facet filters** with Sleeve, Neckline, Occasion, Technique (Aachho-style sidebar — gold standard
+        for this category)
+
 ## Recommended Extra Features (backlog; §65–§74)
 - [ ] Recently Viewed (§65), Continue Shopping (§66), Low-stock indicator (§67), Similar Designs (§68),
         Trending Blouses (§69), WhatsApp floating + Call button (§70–§71), Pincode check (§72), Order Notes
@@ -132,4 +159,5 @@
 
 > **Ordering note:** Fiber inventory (Phase 13) is a prerequisite to full CUSTOMIZE availability checks
 > (Phase 8), so both are scheduled around the customization flow. Phases 8–9 (customize + measurements) are
-> prerequisites for CUSTOMIZE items in Phase 7 cart and Phase 10 checkout.
+> prerequisites for CUSTOMIZE items in Phase 7 cart and Phase 10 checkout. Phase 21 (add-ons & blouse style)
+> builds on the mixed cart (Phase 7) + checkout (Phase 10) + payments decision (Phase 11 / ADR 017).

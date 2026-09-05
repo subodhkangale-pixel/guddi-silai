@@ -1,8 +1,8 @@
 # Guddi Silai — API Architecture (Design)
 
 > Status: **Design + implemented foundation.** Validated against `docs/requirements.pdf`.
-> The authentication section (Section 1) and the product/catalogue sections (Sections 2.2, 3, 4) are implemented.
-> Cart/order/payment endpoints are design only.
+> The authentication, product/catalogue, cart, order, and payment sections are implemented foundations.
+> Inventory, wishlist persistence, coupons, reviews, analytics, and notification endpoints remain planned.
 > Base path `/api/v1`. JSON over HTTP.
 
 ---
@@ -212,6 +212,8 @@ Permissions: `catalogue:read` / `catalogue:write`. All mutations log admin activ
 ## 8. /cart (R §27–§28)
 
 Server-authoritative cart, guest + auth, **two separated sections** (Ready-to-Buy | Customize).
+The current implementation supports guest/user identity, add/update/remove/clear, ready-made variants,
+custom fabric selection, measurement completion, stock validation, and server totals.
 - `GET /cart` — items + authoritative totals; sections + measurement status (✓/⚠).
 - `POST /cart/items` — READY_MADE (variantId + qty) OR CUSTOMIZE (product + fiberId + color [+ measurements]).
 - `PATCH /cart/items/:id`, `DELETE /cart/items/:id`, `DELETE /cart`.
@@ -225,21 +227,19 @@ Server-authoritative cart, guest + auth, **two separated sections** (Ready-to-Bu
 
 ## 9. /orders (R §35, §42–§44)
 
-- `POST /orders` — place order; snapshot items (incl. measurements + instruction version for custom); decrement
-  ready + fiber inventory.
+- `POST /orders` — place a COD or Razorpay order; snapshot items (incl. measurements for custom items); decrement
+  ready-made inventory and clear the cart.
 - `GET /orders` / `GET /orders/:id` — My Orders (order id, date, products, amount, payment status, order status
   §35).
-- `GET /orders/:id/track` — status tracking.
-- Admin: `GET/PATCH /orders` with status filters (All, New, Confirmed, Processing, Stitching, Packed, Shipped,
-  Delivered, Cancelled, Returned, Failed §42); order detail incl. custom-order measurements + version (§44);
-  `POST /orders/:id/cancel`, refund.
+- Admin: `GET/PATCH /admin/orders` with status filters and RBAC-protected status updates.
+- Remaining: dedicated tracking endpoint, cancellation/refunds, fiber inventory decrement, and notification delivery.
 - Order-status transitions use the exact PDF labels (§35/§42) — see database-design §9.2.
 
 ---
 
 ## 10. /payments (R §82, §63)
 
-- India-focused gateway (Razorpay/another suitable provider — provider is an open decision detail).
+- Razorpay integration is implemented; credentials are optional for local COD-only development.
 - `POST /payments/create`, `POST /payments/verify`, `POST /payments/webhook` (signature-verified, idempotent).
 - Payment method/status/transaction ID recorded on the order (§43). Never trust client payment status/amounts.
 

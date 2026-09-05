@@ -462,6 +462,7 @@ The PDF explicitly endorses the **existing stack**:
 | 3 | Email/password registration, or Google + guest only? | §30, §82 | Auth model |
 | 4 | Notification delivery channel (WhatsApp/email/SMS/in-app) | §51 | Notifications service |
 | 5 | Exact payment provider + payment methods (COD? UPI?) | §82 | Payments design |
+> **Resolved (Sept 2026): Razorpay primary + COD toggle, UPI-first checkout. See ADR 017.** |
 | 6 | Which recommended extras (§65–74) are in v1 scope | §65–74 | Roadmap |
 | 7 | Whether SHOWCASE designs can be converted to purchasable later | §25 | Capability registry |
 | 8 | Using GA4 in addition to own DB analytics — privacy/storage of IP/location | §63, §82 | Analytics + privacy |
