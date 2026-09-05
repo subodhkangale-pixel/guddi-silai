@@ -14,6 +14,7 @@ import {
 import { Category, CursorResponse, ProductCard, ProductDetail, ProductQuery } from './types';
 import { addCartItem, applyCoupon, clearCart, getCart, removeCoupon, updateCartItem, updateMeasurements, AddCartItemInput, MeasurementValue } from './cartApi';
 import { createOrder, CreateOrderInput, getOrders } from './orderApi';
+import { getNotifications, markNotificationRead } from './notificationApi';
 
 // ──────────────────────────────────────────────
 // Catalogue reference hooks
@@ -139,6 +140,18 @@ export function useCreateOrder() {
 
 export function useOrders() {
   return useQuery({ queryKey: ['orders'], queryFn: getOrders });
+}
+
+export function useNotifications() {
+  return useQuery({ queryKey: ['notifications'], queryFn: getNotifications });
+}
+
+export function useMarkNotificationRead() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: markNotificationRead,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notifications'] }),
+  });
 }
 
 // ──────────────────────────────────────────────

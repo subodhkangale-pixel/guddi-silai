@@ -14,6 +14,7 @@ import AdminProducts from './pages/admin/AdminProducts';
 import AdminOrders from './pages/admin/AdminOrders';
 import AdminInventory from './pages/admin/AdminInventory';
 import AdminAnalytics from './pages/admin/AdminAnalytics';
+import NotificationsPage from './pages/Notifications';
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
         <Route path="wishlist" element={<WishlistPage />} />
         <Route path="checkout" element={<CheckoutPage />} />
         <Route path="orders" element={<OrdersPage />} />
+        <Route path="notifications" element={<NotificationsPage />} />
       </Route>
 
       <Route path="/admin/login" element={<AdminLogin />} />

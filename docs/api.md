@@ -287,9 +287,11 @@ custom fabric selection, measurement completion, stock validation, and server to
 
 ## 15. /notifications (R §51)
 
-- `GET /notifications` and `PATCH /notifications/:id/read` provide authenticated in-app notifications.
-- Order placement creates a customer notification and fan-outs a new-order notification to active admins.
-- Remaining: every status-transition event, low-stock/payment notifications, and external delivery channels.
+- `GET /notifications` and `PATCH /notifications/:id/read` provide authenticated in-app notifications; the web
+  app exposes them at `/notifications`.
+- Order placement creates a customer notification and fan-outs a new-order notification to active admins; admin
+  status changes create customer status notifications.
+- Remaining: low-stock/payment notifications and external delivery channels.
 
 ---
 

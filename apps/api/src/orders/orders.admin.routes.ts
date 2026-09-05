@@ -6,6 +6,7 @@ import { requireAdmin, authorize, logAdminActivity } from '../middleware/adminAu
 import { validateBody, validateQuery } from '../middleware/validate.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 import * as ordersService from './orders.service.js';
+import * as notificationsService from '../notifications/notifications.service.js';
 
 const router: Router = Router();
 router.use(requireAdmin);
@@ -16,6 +17,9 @@ router.patch(
   validateBody(updateOrderStatusSchema),
   asyncHandler(async (req, res) => {
     const updated = await ordersService.adminUpdateStatus(req.params.id, req.body.status);
+    if (updated.userId) {
+      await notificationsService.createForUser(updated.userId, 'Order status updated', `Your order ${updated.orderNumber} is now ${updated.status}.`, 'ORDER_STATUS_UPDATED');
+    }
     await logAdminActivity(req.admin!.id, req, {
       action: 'order.status_update',
       targetType: 'order',

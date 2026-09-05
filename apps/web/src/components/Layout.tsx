@@ -22,6 +22,7 @@ function Layout() {
               >
                 Products
               </Link>
+              <Link to="/notifications" className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Notifications</Link>
               <Link
                 to="/products"
                 className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
