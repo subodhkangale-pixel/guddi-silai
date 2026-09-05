@@ -171,6 +171,12 @@ export async function adminListOrders(status?: OrderStatus) {
   });
 }
 
+export async function adminGetOrder(orderId: string) {
+  const order = await prisma.order.findUnique({ where: { id: orderId } });
+  if (!order) throw new AppError(404, 'Order not found');
+  return order;
+}
+
 export async function adminUpdateStatus(orderId: string, status: OrderStatus) {
   const order = await prisma.order.findUnique({ where: { id: orderId } });
   if (!order) throw new AppError(404, 'Order not found');

@@ -81,4 +81,15 @@ describe('order service', () => {
     await expect(ordersService.adminUpdateStatus('o1', 'CONFIRMED')).resolves.toMatchObject({ status: 'CONFIRMED' });
     await expect(ordersService.adminUpdateStatus('o1', 'DELIVERED')).rejects.toMatchObject({ statusCode: 409 });
   });
+
+  it('returns an order for admins by id', async () => {
+    prisma.order.findUnique.mockResolvedValue({ id: 'o1', orderNumber: 'GS-TEST' });
+    await expect(ordersService.adminGetOrder('o1')).resolves.toMatchObject({ orderNumber: 'GS-TEST' });
+    expect(prisma.order.findUnique).toHaveBeenCalledWith({ where: { id: 'o1' } });
+  });
+
+  it('throws 404 when an admin requests a missing order', async () => {
+    prisma.order.findUnique.mockResolvedValue(null);
+    await expect(ordersService.adminGetOrder('missing')).rejects.toMatchObject({ statusCode: 404 });
+  });
 });

@@ -1,6 +1,8 @@
 import { NavLink, Navigate, Outlet, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 
 import { clearAdminToken, getAdminToken } from '../../api/admin';
+import { getAdminNotifications } from '../../api/adminNotificationApi';
 import { useAdminMe } from '../../api/hooks';
 import Spinner from '../../components/Spinner';
 
@@ -20,6 +22,12 @@ const NAV_ITEMS = [
 function AdminLayout() {
   const token = getAdminToken();
   const { data, isPending, isError } = useAdminMe(token);
+  const notifications = useQuery({
+    queryKey: ['admin-notifications'],
+    queryFn: getAdminNotifications,
+    enabled: Boolean(token),
+    refetchInterval: 60_000,
+  });
   const navigate = useNavigate();
 
   if (!token) return <Navigate to="/admin/login" replace />;
@@ -37,6 +45,7 @@ function AdminLayout() {
   }
 
   const admin = data?.data;
+  const unread = (notifications.data?.data ?? []).filter((item) => !item.isRead).length;
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -44,6 +53,18 @@ function AdminLayout() {
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
           <span className="font-bold">Guddi Silai Admin</span>
           <div className="flex items-center gap-4">
+            <button
+              onClick={() => navigate('/admin/notifications')}
+              className="relative rounded-md border border-gray-600 px-3 py-1 text-sm text-gray-200 hover:bg-gray-700"
+              aria-label="Notifications"
+            >
+              Notifications
+              {unread > 0 && (
+                <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[11px] font-bold">
+                  {unread}
+                </span>
+              )}
+            </button>
             <span className="text-sm text-gray-300">
               {admin?.name ?? admin?.id ?? ''}
             </span>

@@ -26,4 +26,22 @@ describe('notifications service', () => {
     await expect(notificationsService.listForIdentity('guest-1', 'guest')).resolves.toEqual([]);
     expect(prisma.notification.findMany).not.toHaveBeenCalled();
   });
+
+  it('lists notifications for a specific admin', async () => {
+    prisma.notification.findMany.mockResolvedValue([{ id: 'n1', adminUserId: 'a1' }]);
+    await notificationsService.listForAdmin('a1');
+    expect(prisma.notification.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { adminUserId: 'a1' } }));
+  });
+
+  it('marks only the admins own notification as read', async () => {
+    prisma.notification.findFirst.mockResolvedValue({ id: 'n1', adminUserId: 'a1' });
+    await notificationsService.markAdminRead('a1', 'n1');
+    expect(prisma.notification.findFirst).toHaveBeenCalledWith({ where: { id: 'n1', adminUserId: 'a1' } });
+    expect(prisma.notification.update).toHaveBeenCalledWith({ where: { id: 'n1' }, data: { isRead: true } });
+  });
+
+  it('throws 404 when marking a missing admin notification', async () => {
+    prisma.notification.findFirst.mockResolvedValue(null);
+    await expect(notificationsService.markAdminRead('a1', 'missing')).rejects.toMatchObject({ statusCode: 404 });
+  });
 });

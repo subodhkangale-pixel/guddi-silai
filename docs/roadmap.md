@@ -93,10 +93,12 @@
 ## Phase 12 — Orders (§35, §42–§44)
 - [x] Order lifecycle with enforced sequential PDF statuses: Placed → Confirmed → Processing → Stitching → Quality Check → Packed →
         Shipped → Delivered (+ Cancelled/Returned/Failed)
-- [ ] My Orders (order id, date, products, amount, payment status, order status)
-- [ ] Admin order management + filters + custom-order detail (measurements + version)
-- [ ] Order snapshots (embedded item + measurement snapshots)
-- [x] In-app notifications on order placement and admin status changes for customers/admins (§51)
+- [x] My Orders (order id, date, products, amount, payment status, order status) + order detail page with timeline,
+        items, measurements (with instruction version), payment & address and full price breakdown
+- [x] Admin order management + filters + custom-order detail (measurements + version, payment, customer)
+- [x] Order snapshots (embedded item + measurement snapshots)
+- [x] In-app notifications on order placement and admin status changes for customers/admins (§51) — incl. admin inbox
+        with unread badge in the admin header
 - [ ] External delivery channels (§51)
 
 ## Phase 13 — Inventory (§47–§48)
@@ -111,6 +113,8 @@
 - [ ] Analytics dashboard (overview, visitor, user activity, product, customer, cart, funnel, date filter,
         charts, CSV/Excel export) (§36–§41, §59–§61)
 - [ ] Product/category/inventory (incl. fiber)/orders/coupons/offers/reviews/enquiries/notifications management
+  (partial: orders + notifications management shipped; products/inventory/catalogue reference CRUD present; coupons/offers/
+  reviews/enquiries admin screens remaining)
 - [ ] RBAC enforcement (Super Admin, Order Manager, Product Manager, Stitching Manager, Analyst) + admin activity logs (§62–§64)
 
 ## Phase 15 — Reviews / Coupons / Offers

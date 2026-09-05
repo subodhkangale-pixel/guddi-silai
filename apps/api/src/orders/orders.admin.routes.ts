@@ -11,6 +11,7 @@ import * as notificationsService from '../notifications/notifications.service.js
 const router: Router = Router();
 router.use(requireAdmin);
 router.get('/orders', authorize('order:read'), validateQuery(adminOrderQuerySchema), ordersController.adminListOrders);
+router.get('/orders/:id', authorize('order:read'), ordersController.getAdminOrder);
 router.patch(
   '/orders/:id/status',
   authorize('order:write'),

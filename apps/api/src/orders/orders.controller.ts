@@ -30,3 +30,8 @@ export const adminUpdateStatus = asyncHandler(async (req: Request, res: Response
   const updated = await ordersService.adminUpdateStatus(req.params.id, req.body.status);
   res.json({ data: updated });
 });
+
+export const getAdminOrder = asyncHandler(async (req: Request, res: Response) => {
+  const order = await ordersService.adminGetOrder(req.params.id);
+  res.json({ data: order });
+});
