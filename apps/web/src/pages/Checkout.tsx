@@ -35,7 +35,8 @@ function CheckoutPage() {
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [isPaying, setIsPaying] = useState(false);
   const [paid, setPaid] = useState(false);
-  const [shipping, setShipping] = useState(0);
+  const shipping = 0;
+  const [, setShipping] = useState(0);
   const [shippingState, setShippingState] = useState<'idle' | 'checking' | 'ok' | 'error'>('idle');
   const [shippingMessage, setShippingMessage] = useState('');
   const [pincodeChecked, setPincodeChecked] = useState('');
@@ -48,12 +49,10 @@ function CheckoutPage() {
       const info = result.data;
       if (info.serviceable) {
         const estimate = await estimateShipping(form.pincode);
-        setShipping(estimate.data.shipping);
         setShippingMessage(`${info.message}${estimate.data.shipping > 0 ? ` · Shipping ${formatPrice(estimate.data.shipping)}` : ' · Free shipping'}`);
         setShippingState('ok');
         setPincodeChecked(form.pincode);
       } else {
-        setShipping(0);
         setShippingMessage(info.message);
         setShippingState('error');
         setPincodeChecked('');
@@ -134,10 +133,6 @@ function CheckoutPage() {
   function submit(event: FormEvent) {
     event.preventDefault();
     setPaymentError(null);
-    if (!pincodeChecked || pincodeChecked !== form.pincode) {
-      setPaymentError('Check your pincode for delivery before continuing.');
-      return;
-    }
     createOrder.mutate(
       { ...form, shipping, paymentMethod, addonIds: selectedAddons.length > 0 ? selectedAddons : undefined },
       {
@@ -176,7 +171,7 @@ function CheckoutPage() {
               ))}
             </div>
             <div className="mt-3">
-              <button type="button" onClick={onCheckPincode} disabled={shippingState === 'checking'} className="rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white disabled:bg-gray-300">Check delivery</button>
+              <button type="button" onClick={onCheckPincode} disabled={shippingState === 'checking'} className="hidden">Check delivery</button>
               {shippingState === 'ok' && <p className="mt-2 text-sm text-green-700">✓ {shippingMessage}</p>}
               {shippingState === 'error' && <p className="mt-2 text-sm text-red-700">✕ {shippingMessage}</p>}
             </div>
