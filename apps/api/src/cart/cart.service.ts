@@ -67,6 +67,18 @@ export async function addItem(ownerKey: string, userId: string | undefined, inpu
     unitPrice += fiberPrice;
   }
 
+  let embroideryName: string | undefined;
+  let embroiderySurcharge: number | undefined;
+  if (input.embroideryId) {
+    const embroidery = product.embroideryOptions.find(
+      (option) => option.id === input.embroideryId && option.isActive !== false
+    );
+    if (!embroidery) throw new AppError(400, 'Selected embroidery is unavailable');
+    embroideryName = embroidery.name;
+    embroiderySurcharge = embroidery.surcharge ?? 0;
+    unitPrice += embroiderySurcharge;
+  }
+
   const [cart, colors, sizes] = await Promise.all([
     getOrCreateCart(ownerKey, userId),
     colorId ? prisma.color.findUnique({ where: { id: colorId } }) : Promise.resolve(null),
@@ -106,8 +118,8 @@ export async function addItem(ownerKey: string, userId: string | undefined, inpu
       fiberName: fiberName ?? null,
       fiberPrice: fiberPrice ?? null,
       embroideryId: input.embroideryId ?? null,
-      embroideryName: null,
-      embroiderySurcharge: null,
+      embroideryName: embroideryName ?? null,
+      embroiderySurcharge: embroiderySurcharge ?? null,
       unitPrice,
       discount: product.discountPercent ?? null,
       quantity: input.quantity,

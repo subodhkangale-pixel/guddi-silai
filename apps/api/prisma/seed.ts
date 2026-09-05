@@ -471,12 +471,37 @@ async function seedProducts(
   }
 }
 
+async function seedMeasurementFields(): Promise<void> {
+  const fields = [
+    { key: 'bust', label: 'Bust', unit: 'INCHES', instructions: 'Measure around the fullest part of your chest, keeping the tape snug but not tight.', displayOrder: 1 },
+    { key: 'under-bust', label: 'Under Bust', unit: 'INCHES', instructions: 'Measure around your ribcage, just below the bust.', displayOrder: 2 },
+    { key: 'waist', label: 'Waist', unit: 'INCHES', instructions: 'Measure around your natural waistline, at the narrowest point.', displayOrder: 3 },
+    { key: 'shoulder', label: 'Shoulder', unit: 'INCHES', instructions: 'Measure from the edge of one shoulder across to the other.', displayOrder: 4 },
+    { key: 'blouse-length', label: 'Blouse Length', unit: 'INCHES', instructions: 'From the top of the shoulder down the front to your desired blouse hem.', displayOrder: 5 },
+    { key: 'sleeve-length', label: 'Sleeve Length', unit: 'INCHES', instructions: 'From the shoulder tip down the arm to the desired sleeve end.', displayOrder: 6 },
+    { key: 'armhole', label: 'Armhole', unit: 'INCHES', instructions: 'Measure around the top of the arm where it joins the shoulder.', displayOrder: 7 },
+    { key: 'upper-arm', label: 'Upper Arm', unit: 'INCHES', instructions: 'Measure around the fullest part of your upper arm.', displayOrder: 8 },
+    { key: 'sleeve-opening', label: 'Sleeve Opening', unit: 'INCHES', instructions: 'Measure around the arm at the point where the sleeve will end.', displayOrder: 9 },
+    { key: 'front-neck-depth', label: 'Front Neck Depth', unit: 'INCHES', instructions: 'From the back of the neck to the desired front neckline depth.', displayOrder: 10 },
+    { key: 'back-neck-depth', label: 'Back Neck Depth', unit: 'INCHES', instructions: 'From the back of the neck to the desired back neckline depth.', displayOrder: 11 },
+  ];
+  for (const [index, field] of fields.entries()) {
+    const { key, ...rest } = field;
+    await prisma.measurementField.upsert({
+      where: { key },
+      update: { ...rest, displayOrder: index + 1, version: { increment: 1 } },
+      create: { ...field, displayOrder: index + 1 },
+    });
+  }
+}
+
 async function main(): Promise<void> {
   const keyToId = await seedPermissions();
   await seedRoles(keyToId);
   await seedSuperAdmin();
   const ids = await seedCatalogue();
   await seedProducts(ids);
+  await seedMeasurementFields();
 }
 
 main()
