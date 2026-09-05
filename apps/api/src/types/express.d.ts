@@ -5,6 +5,11 @@ declare global {
   namespace Express {
     interface Request {
       user?: AuthenticatedUser;
+      identity?: {
+        id: string;
+        type: 'user' | 'guest';
+      };
+      rawBody?: Buffer;
       admin?: {
         id: string;
         name: string;

@@ -40,3 +40,4 @@ What becomes easier or more difficult to do because of this change?
 - [ADR 014: Flexible Event-based Analytics](./adr-014-analytics.md)
 - [ADR 015: API Design Boundaries](./adr-015-api-boundaries.md)
 - [ADR 016: Fiber Inventory for Customization](./adr-016-fiber-inventory.md)
+- [ADR 017: Payment Provider — Razorpay Primary (small-business fit)](./adr-017-payments-provider.md)

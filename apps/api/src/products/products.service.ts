@@ -17,10 +17,8 @@ function isUniqueViolation(err: unknown): boolean {
     err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002'
   );
 }
-
 // ──────────────────────────────────────────────
 // Cursor helpers (keyset pagination)
-// ──────────────────────────────────────────────
 
 export interface KeySetCursor {
   sortValue: string;
@@ -397,10 +395,22 @@ export async function getProductBySlug(slug: string) {
       ? prisma.subCategory.findUnique({ where: { id: product.subCategoryId } })
       : Promise.resolve(null),
     prisma.color.findMany({
-      where: { id: { in: product.colors.map((c) => c.colorId).filter(Boolean) } },
+      where: {
+        id: {
+          in: product.colors
+            .map((c) => c.colorId)
+            .filter((id): id is string => id !== null),
+        },
+      },
     }),
     prisma.size.findMany({
-      where: { id: { in: product.sizes.map((s) => s.sizeId).filter(Boolean) } },
+      where: {
+        id: {
+          in: product.sizes
+            .map((s) => s.sizeId)
+            .filter((id): id is string => id !== null),
+        },
+      },
     }),
   ]);
 
