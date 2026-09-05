@@ -7,6 +7,7 @@ import CartPage from './pages/Cart';
 import WishlistPage from './pages/Wishlist';
 import CheckoutPage from './pages/Checkout';
 import OrdersPage from './pages/Orders';
+import OrderDetailPage from './pages/OrderDetail';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminLayout from './pages/admin/AdminLayout';
 import CatalogueCrud from './pages/admin/CatalogueCrud';
@@ -14,6 +15,7 @@ import AdminProducts from './pages/admin/AdminProducts';
 import AdminOrders from './pages/admin/AdminOrders';
 import AdminInventory from './pages/admin/AdminInventory';
 import AdminAnalytics from './pages/admin/AdminAnalytics';
+import AdminNotifications from './pages/admin/AdminNotifications';
 import NotificationsPage from './pages/Notifications';
 
 function App() {
@@ -27,6 +29,7 @@ function App() {
         <Route path="wishlist" element={<WishlistPage />} />
         <Route path="checkout" element={<CheckoutPage />} />
         <Route path="orders" element={<OrdersPage />} />
+        <Route path="orders/:orderNumber" element={<OrderDetailPage />} />
         <Route path="notifications" element={<NotificationsPage />} />
       </Route>
 
@@ -36,6 +39,7 @@ function App() {
         <Route index element={<Navigate to="/admin/products" replace />} />
         <Route path="products" element={<AdminProducts />} />
         <Route path="orders" element={<AdminOrders />} />
+        <Route path="notifications" element={<AdminNotifications />} />
         <Route path="inventory" element={<AdminInventory />} />
         <Route path="analytics" element={<AdminAnalytics />} />
         <Route path="categories" element={<CatalogueCrud entity="categories" />} />

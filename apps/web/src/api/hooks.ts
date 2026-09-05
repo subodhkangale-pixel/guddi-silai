@@ -15,7 +15,7 @@ import { Category, CursorResponse, ProductCard, ProductDetail, ProductQuery } fr
 import { addCartItem, applyCoupon, clearCart, getCart, removeCoupon, updateCartItem, updateMeasurements, AddCartItemInput, MeasurementValue } from './cartApi';
 import { getMeasurementFields } from './measurementApi';
 import { getFiberAvailability } from './catalogApi';
-import { createOrder, CreateOrderInput, getOrders } from './orderApi';
+import { createOrder, CreateOrderInput, getOrders, getOrderByNumber } from './orderApi';
 import { getNotifications, markNotificationRead } from './notificationApi';
 
 // ──────────────────────────────────────────────
@@ -154,6 +154,15 @@ export function useCreateOrder() {
 
 export function useOrders() {
   return useQuery({ queryKey: ['orders'], queryFn: getOrders });
+}
+
+export function useOrder(orderNumber: string | undefined) {
+  return useQuery({
+    queryKey: ['order', orderNumber],
+    queryFn: () => getOrderByNumber(orderNumber!),
+    enabled: Boolean(orderNumber),
+    retry: false,
+  });
 }
 
 export function useNotifications() {

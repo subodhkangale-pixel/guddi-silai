@@ -109,7 +109,7 @@ function CheckoutPage() {
         <p className="text-sm font-semibold uppercase tracking-wide text-green-600">Order placed</p>
         <h1 className="mt-2 text-3xl font-bold text-gray-900">Thank you for your order</h1>
         <p className="mt-3 text-gray-600">Your order number is <strong>{createOrder.data.data.orderNumber}</strong>.</p>
-        <Link to="/orders" className="mt-8 inline-block rounded-md bg-pink-600 px-5 py-3 font-semibold text-white">View my orders</Link>
+        <Link to={`/orders/${createOrder.data.data.orderNumber}`} className="mt-8 inline-block rounded-md bg-pink-600 px-5 py-3 font-semibold text-white">View order details</Link>
       </div>
     );
   }

@@ -20,3 +20,13 @@ export async function createForAdmins(title: string, message: string, type: stri
   const admins = await prisma.adminUser.findMany({ where: { isActive: true }, select: { id: true } });
   return Promise.all(admins.map((admin) => prisma.notification.create({ data: { adminUserId: admin.id, title, message, type } })));
 }
+
+export async function listForAdmin(adminId: string) {
+  return prisma.notification.findMany({ where: { adminUserId: adminId }, orderBy: { createdAt: 'desc' }, take: 100 });
+}
+
+export async function markAdminRead(adminId: string, notificationId: string) {
+  const notification = await prisma.notification.findFirst({ where: { id: notificationId, adminUserId: adminId } });
+  if (!notification) throw new AppError(404, 'Notification not found');
+  return prisma.notification.update({ where: { id: notification.id }, data: { isRead: true } });
+}
